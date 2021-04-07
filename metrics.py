@@ -1,5 +1,6 @@
 import jiwer
 import jiwer.transforms as tr
+from typing import List
 
 class SentencesToListOfCharacters(tr.AbstractTransform):
     def process_string(self, s: str):
