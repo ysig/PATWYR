@@ -18,7 +18,7 @@ class ResNetFeatures(nn.Module):
 
     def forward(self, x):
         # From https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
-        x = self.resnet.conv1(x.unsqueeze(0).unsqueeze(0).repeat(1, 3, 1, 1))
+        x = self.resnet.conv1(x.unsqueeze(1).repeat(1, 3, 1, 1))
         x = self.resnet.bn1(x)
         x = self.resnet.relu(x)
         x = self.resnet.maxpool(x)
@@ -30,7 +30,7 @@ class ResNetFeatures(nn.Module):
         # x = self.avgpool(x)
         # x = torch.flatten(x, 1)
         # x = self.fc(x)
-        return x.squeeze(0)
+        return x
 
 # class TransformerLayer(nn.Module):
 #     def __init__(self, f=1024):
@@ -87,19 +87,19 @@ class VisualFeatureEncoder(nn.Module):
     def forward(self, x):
         # Question: input-size?
         x = self.resnet(x)
-        f, h, w = x.size()
-        x = x.view(f*h, w).permute(1, 0).contiguous()
+        b, f, h, w = x.size()
+        x = x.view(b, f*h, w).permute(0, 2, 1).contiguous()
         x = F.relu(self.fc(x))
-        x = self.pe(x.unsqueeze(1))
+        x = self.pe(x.permute(1, 0, 2).contiguous())
         x = self.layer_norm(F.relu(self.fc_bar(x)))
         x = F.softmax(self.transformer_encoder(x), dim=2)
-        x = F.relu(self.fc_hat(x.squeeze(1).permute(1, 0)))
-        x = self.layer_norm2(x).permute(1, 0).unsqueeze(1)
+        x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
+        x = self.layer_norm2(x).permute(2, 1, 0)
         return x
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, max_len=1000):
+    def __init__(self, d_model, max_len=2228):
         super(PositionalEncoding, self).__init__()
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
@@ -115,7 +115,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TextTranscriber(nn.Module):
-    def __init__(self, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1):
+    def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1):
         super().__init__()
         self.ebl = nn.Embedding(dict_size, f)
         self.pe = PositionalEncoding(f)
@@ -124,6 +124,8 @@ class TextTranscriber(nn.Module):
         decoder_layer = nn.TransformerDecoderLayer(d_model=f, nhead=num_heads)
         self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
         self.linear = nn.Linear(f, dict_size)
+        self.alphabet = alphabet
+        self.inv_alphabet = {j: i for i, j in alphabet.items()}
         
 
     def generate_square_subsequent_mask(self, sz):
@@ -132,46 +134,73 @@ class TextTranscriber(nn.Module):
         return mask
 
     def forward(self, x, y):
-        x = self.ebl(x).unsqueeze(1)
+        x = self.ebl(x)
         x = self.pe(x)
         a = self.generate_square_subsequent_mask(x.size()[0])
         x = F.softmax(self.transformer_encoder(x, a), dim=2)
         x = self.transformer_decoder(y, x, a, a)
-        return self.linear(x).squeeze(1)
+        return self.linear(x).permute(1, 0, 2).contiguous()
+
+    @torch.no_grad()
+    def to_text_(self, x):
+        txt = []
+        p = {self.alphabet["<F>"], self.alphabet["<P>"]}
+        s = self.alphabet["<S>"]
+        for idx in x.cpu().numpy():
+            if idx in p:
+                break
+            if idx == s:
+                continue
+            txt.append(self.inv_alphabet[idx])
+        return "".join(txt)
+
+    @torch.no_grad()
+    def to_text(self, x):
+        if len(x.size()) == 2:
+            return [self.to_text_(x[i]) for i in range(x.size()[0])]
+        else:
+            return self.to_text_(x)
+
+    @torch.no_grad()
+    def gen(self, y):
+        out = []
+        fs = self.alphabet["<F>"]
+        for i in range(y.size()[1]):
+            img = y[:,i].unsqueeze(1)
+            xp = torch.LongTensor([alphabet["<S>"]])
+            for j in range(89):
+                x = self.ebl(xp)
+                x = self.pe(x)
+                x = F.softmax(self.transformer_encoder(x), dim=2)
+                x = self.transformer_decoder(img[:j+1, :, :], x)
+                x = self.linear(x).permute(1, 0, 2).contiguous()
+                a = torch.argmax(x, keepdim=True, dim=2).squeeze(2).squeeze(0)
+                xp = torch.cat([torch.LongTensor([alphabet["<S>"]]), a], dim=0)
+                if xp[-1] == fs:
+                    break
+            out.append(self.to_text(xp))
+        return out
 
 
 if __name__ == "__main__":
     import torchvision
     import numpy as np
+    from torchvision.io import read_image
     from torchvision.transforms.functional import resize, pil_to_tensor
     import os
     import PIL
 
     # load two images
-    def load_image(path):
+    def load_image(path, max_len=2227):
         img = PIL.Image.open(os.path.join('debug-data', path))
-        array = pil_to_tensor(img).squeeze(0).permute(1, 0).unsqueeze(0).float()/255.0
-        return resize(array, size=64).squeeze(0).permute(1, 0)
+        array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
+        img = resize(array, size=64).permute(0, 2, 1)
+        a = nn.ZeroPad2d((0, max_len-img.size()[2], 0, 0))(img)
+        return a
 
-    def load_batch_image(max_len=2227):
+    def load_batch_image():
         # Each batch should have 
-        c = 0
-        batch = []
-        while True:
-            img = load_image('1.png')
-            if c + img.size()[1] <= max_len:
-                c += img.size()[1]
-                batch.append(img)
-            else:
-                break
-        batch_img = torch.cat(batch, dim=1)
-        if batch_img.size()[0] != max_len:
-            batch_img = nn.ZeroPad2d((0, max_len-batch_img.size()[1], 0, 0))(batch_img)
-        return batch_img
-
-    def load_text():
-        inp = "A|MOVE|to|stop|Mr.|Gaitskell|from"
-        return ["<S>"] + list(inp.replace("|", " ")) + ["<E>"]
+        return torch.cat([load_image(f"{i}.png") for i in range(1, 3)], dim=0)
 
     character_dict = dict()
     def get(x):
@@ -183,24 +212,28 @@ if __name__ == "__main__":
         else:
             return a
 
-    def load_batch_text(max_len=90):
-        batch_text = []
-        while True:
-            q = load_text()
-            if len(batch_text) + len(q) <= max_len:
-                batch_text += q
-            else:
-                break
-        for i in range(max_len - len(batch_text)):
-            batch_text.append("<P>")
-        return torch.LongTensor([get(b) for b in batch_text])
+    TXT = ["A|MOVE|to|stop|Mr.|Gaitskell|from", "nominating|any|more|Labour|life|Peers"]
+    def load_text(i, max_len=90):
+        inp = TXT[i]
+        txt = ["<S>"] + list(inp) + ["<E>"]
+        for i in range(max_len - len(txt)):
+            txt.append("<P>")        
+        t = torch.LongTensor([get(b) for b in txt])
+        return t.unsqueeze(1)
 
+    def load_batch_text():
+        return torch.cat([load_text(i) for i in range(2)], dim=1)
+
+    alphabet = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*': 8, '+': 9, ',': 10, '-': 11, '.': 12, '/': 13, '0': 14, '1': 15, '2': 16, '3': 17, '4': 18, '5': 19, '6': 20, '7': 21, '8': 22, '9': 23, ':': 24, ';': 25, '<F>': 26, '<P>': 27, '<S>': 28, '?': 29, 'A': 30, 'B': 31, 'C': 32, 'D': 33, 'E': 34, 'F': 35, 'G': 36, 'H': 37, 'I': 38, 'J': 39, 'K': 40, 'L': 41, 'M': 42, 'N': 43, 'O': 44, 'P': 45, 'Q': 46, 'R': 47, 'S': 48, 'T': 49, 'U': 50, 'V': 51, 'W': 52, 'X': 53, 'Y': 54, 'Z': 55, 'a': 56, 'b': 57, 'c': 58, 'd': 59, 'e': 60, 'f': 61, 'g': 62, 'h': 63, 'i': 64, 'j': 65, 'k': 66, 'l': 67, 'm': 68, 'n': 69, 'o': 70, 'p': 71, 'q': 72, 'r': 73, 's': 74, 't': 75, 'u': 76, 'v': 77, 'w': 78, 'x': 79, 'y': 80, 'z': 81, '|': 82}
     vfe = VisualFeatureEncoder()
-    tt = TextTranscriber()
+    tt = TextTranscriber(alphabet)
     a = vfe(load_batch_image())
     bt = load_batch_text()
-    b = tt(bt[0:89], a)
+    b = tt(bt[0:89, :], a)
     criterion = nn.CrossEntropyLoss()
-    loss = criterion(b, bt[1:])
+    cs, bs = bt[1:, :].size()
+    N = cs*bs
+    loss = criterion(b.view(N, -1), bt[1:, :].view(N))
     loss.backward()
-    
+    out = tt.gen(a)
+    print(out)
