@@ -44,7 +44,7 @@ class PATWYR(object):
         assert checkpoint is not None or checkpoint_dir is not None
         self.wandb = False
 
-    def dataloader(self, purpose='train', batch_size, num_workers, pin_memory):
+    def dataloader(self, purpose, batch_size, num_workers, pin_memory):
         if purpose == 'train':
             indices = range(6482)
         elif purpose == 'val':
@@ -197,7 +197,7 @@ if __name__ == "__main__":
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
-        model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb):
+        model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
         model.train(args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory))
 
     elif args.command == 'test':
@@ -205,4 +205,4 @@ if __name__ == "__main__":
         model.test(args.iam_annotation_txt, args.iam_image_folder)
 
     elif args.command == 'gen':
-        model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device):
+        model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device)
