@@ -157,7 +157,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest='command')
     subparsers.required = True
     def add_command(cmd, desc, example=None):
-        epilog = 'Example: %s %s' % (prog, example) if example is not None else None
+        epilog = 'Example: %s %s' % ("main.py", example) if example is not None else None
         return subparsers.add_parser(cmd, description=desc, help=desc, epilog=epilog)
 
     p = add_command('train', 'main.py', 'train -a ascii/lines.txt -i ')
