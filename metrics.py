@@ -1,12 +1,11 @@
 import jiwer
 import jiwer.transforms as tr
-from typing import List
 
 class SentencesToListOfCharacters(tr.AbstractTransform):
-    def process_string(self, s: str):
+    def process_string(self, s):
         return list(s)
 
-    def process_list(self, inp: List[str]):
+    def process_list(self, inp):
         chars = []
 
         for sentence in inp:
