@@ -4,7 +4,7 @@ from torch.nn import functional as F
 import torchvision
 from tqdm import tqdm, trange
 import math
-import fastwer
+from metrics import Metrics
 import wandb
 
 class LabelSmoothingLoss(torch.nn.Module):
@@ -42,6 +42,7 @@ class PATWYR(object):
         self.load_model(checkpoint)
         self.alphabet = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*': 8, '+': 9, ',': 10, '-': 11, '.': 12, '/': 13, '0': 14, '1': 15, '2': 16, '3': 17, '4': 18, '5': 19, '6': 20, '7': 21, '8': 22, '9': 23, ':': 24, ';': 25, '<F>': 26, '<P>': 27, '<S>': 28, '?': 29, 'A': 30, 'B': 31, 'C': 32, 'D': 33, 'E': 34, 'F': 35, 'G': 36, 'H': 37, 'I': 38, 'J': 39, 'K': 40, 'L': 41, 'M': 42, 'N': 43, 'O': 44, 'P': 45, 'Q': 46, 'R': 47, 'S': 48, 'T': 49, 'U': 50, 'V': 51, 'W': 52, 'X': 53, 'Y': 54, 'Z': 55, 'a': 56, 'b': 57, 'c': 58, 'd': 59, 'e': 60, 'f': 61, 'g': 62, 'h': 63, 'i': 64, 'j': 65, 'k': 66, 'l': 67, 'm': 68, 'n': 69, 'o': 70, 'p': 71, 'q': 72, 'r': 73, 's': 74, 't': 75, 'u': 76, 'v': 77, 'w': 78, 'x': 79, 'y': 80, 'z': 81, '|': 82}
         assert checkpoint is not None or checkpoint_dir is not None
+        self.metrics = Metrics()
         self.wandb = False
 
     def dataloader(self, purpose, batch_size, num_workers, pin_memory):
@@ -60,7 +61,7 @@ class PATWYR(object):
 
     def metrics(self, hypo, ref):
         # Corpus-Level WER: 40.0
-        wer, cer = fastwer.score(hypo, ref), fastwer.score(hypo, ref, char_level=True)
+        wer, cer = self.metrics.wer(hypo, ref), self.metrics.cer(hypo, ref)
         return wer, cer
 
     def train_(self):
