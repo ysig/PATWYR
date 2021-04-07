@@ -172,6 +172,7 @@ if __name__ == "__main__":
     p.add_argument('-we', '--wandb-entity', type=str, default=None, help='Wandb-ID')
     p.add_argument('-r', '--resume-checkpoint', default=None, help='Directory containing dataset')
     p.add_argument('-w', '--num_workers', type=int, default=4)
+    p.add_argument('-se', '--smoothing_eps', type=float, default=0.4)
     p.add_argument('-c', '--checkpoint-dir', required=True, help='Directory containing dataset')
     p.add_argument('-bs', '--batch-size', default=32, help='Directory containing dataset')
     p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
@@ -200,7 +201,7 @@ if __name__ == "__main__":
             del conf['wandb_entity']
             log_wandb = True
         model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory))
+        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps)
 
     elif args.command == 'test':
         model = PATWYR(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
