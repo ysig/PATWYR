@@ -170,7 +170,7 @@ if __name__ == "__main__":
     p.add_argument('-wp', '--wandb-project', type=str, default=None, help='Wandb-ID')
     p.add_argument('-we', '--wandb-entity', type=str, default=None, help='Wandb-ID')
     p.add_argument('-r', '--resume-checkpoint', default=None, help='Directory containing dataset')
-    p.add_argument('-w', '--num_workers', type=int, default=4, choices=all_int)
+    p.add_argument('-w', '--num_workers', type=int, default=4)
     p.add_argument('-c', '--checkpoint-dir', required=True, help='Directory containing dataset')
     p.add_argument('-bs', '--batch-size', default=32, help='Directory containing dataset')
     p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
