@@ -151,7 +151,7 @@ class PATWYR(object):
         torch.save((self.vfe, self.tt, self.optimizer, metrics, step), os.path.join(self.output_folder, 'model.pkl'))
 
 if __name__ == "__main__":
-    import argparser
+    import argparse
 
     parser = argparse.ArgumentParser(prog= "main.py", description = 'Train/Test/Gen for PATWYR', epilog='Type "main.py <command> -h" for more information.')
     subparsers = parser.add_subparsers(dest='command')
