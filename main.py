@@ -142,7 +142,7 @@ class PATWYR(object):
             optimizer.load_state_dict(c)
         else:
             self.metrics_ = {}
-        self.vfe, self.tt, self.optim = vfe.to(self.device), tt.to(self.device), optimizer.to(self.device)
+        self.vfe, self.tt, self.optim = vfe.to(self.device), tt.to(self.device), optimizer
 
     def checkpoint(self, metric, step):
         self.log(metrics, step)
