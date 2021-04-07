@@ -134,8 +134,8 @@ class PATWYR(object):
         vfe = VisualFeatureEncoder()
         tt = TextTranscriber(self.alphabet)
         optimizer = optim.Adam(list(vfe.parameters()) + list(tt.parameters()), lr=0.001)
-        if checkpoint is None:
-            a, b, c, self.metrics_ = torch.load(PATH)
+        if checkpoint is not None:
+            a, b, c, self.metrics_ = torch.load(checkpoint)
             vfe.load_state_dict(a)
             tt.load_state_dict(b)
             optimizer.load_state_dict(c)
