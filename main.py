@@ -7,6 +7,7 @@ from tqdm import tqdm, trange
 from metrics import Metrics
 from architecture import VisualFeatureEncoder, TextTranscriber
 import wandb
+import os
 
 class LabelSmoothingLoss(torch.nn.Module):
     def __init__(self, eps, len_A, reduction="mean", weight=None):
