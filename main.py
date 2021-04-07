@@ -1,10 +1,11 @@
+import math
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
 import torchvision
 from tqdm import tqdm, trange
-import math
 from metrics import Metrics
+from architecture import VisualFeatureEncoder, TextTranscriber
 import wandb
 
 class LabelSmoothingLoss(torch.nn.Module):
@@ -94,7 +95,7 @@ class PATWYR(object):
             for img, txt in train_loader:
                 dim1 += img.size()[0]
                 optimizer.zero_grad()
-                a, bt = self.vfe(img), txt.permute(1, 0)
+                a, bt = self.vfe(img.to(self.device)), txt.permute(1, 0).to(self.device)
                 b = self.tt(bt[0:89], a)
                 loss = criterion(b, bt[1:])
                 loss.backward()

@@ -32,43 +32,6 @@ class ResNetFeatures(nn.Module):
         # x = self.fc(x)
         return x
 
-# class TransformerLayer(nn.Module):
-#     def __init__(self, f=1024):
-#         super().__init__()
-#         self.dropout = nn.Dropout(p=0.1)
-#         self.layer_norm = nn.LayerNorm(f)
-#         self.multi_head = torch.nn.MultiheadAttention(f, num_heads=8)
-#         self.fc = nn.Linear(f, f)
-
-#     def forward(self, x, x1=None, x2=None):
-#         xp = self.layer_norm(x)
-        
-#         if x1 is None:
-#             x1 = xp
-#         if x2 is None:
-#             x2 = xp
-
-#         x = self.multi_head(xp, x1, x2)[0]
-#         x = self.dropout(x)
-#         xp = xp + x
-#         x = self.layer_norm(xp)
-#         x = F.relu(self.fc(x))
-#         x = self.dropout(x)
-#         return xp + x
-
-# class TransformerDecoder(nn.Module):
-#     def __init__(self, f=1024, N=4):
-#         super().__init__()
-#         modules = nn.ModuleList()
-#         for _ in range(N):
-#             modules.append(TransformerLayer())
-#         self.layers = modules
-
-#     def forward(self, x, x1=None, x2=None):
-#         for l in self.layers:
-#             x = l(x, x1, x2)
-#         return x
-
 class VisualFeatureEncoder(nn.Module):
     def __init__(self, f=1024, num_heads=8, num_layers=4, dropout=0.1):
         super().__init__()
