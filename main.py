@@ -199,7 +199,7 @@ if __name__ == "__main__":
             del conf['wandb_entity']
             log_wandb = True
         model = PATWYR(checkpoint=args.resume_checkpoint, checkpoint_dir=args.checkpoint_dir, device=args.device, wandb=log_wandb)
-        model.train(args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory))
+        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory))
 
     elif args.command == 'test':
         model = PATWYR(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
