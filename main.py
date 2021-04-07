@@ -133,7 +133,7 @@ class PATWYR(object):
     def load_model(self, checkpoint):
         vfe = VisualFeatureEncoder()
         tt = TextTranscriber(self.alphabet)
-        optimizer = optim.Adam([vfe.parameters(), tt.parameters()], lr=0.001)
+        optimizer = optim.Adam(list(vfe.parameters()) + list(tt.parameters()), lr=0.001)
         if checkpoint is None:
             a, b, c, self.metrics_ = torch.load(PATH)
             vfe.load_state_dict(a)
