@@ -6,6 +6,7 @@ import torchvision
 from tqdm import tqdm, trange
 from metrics import Metrics
 from architecture import VisualFeatureEncoder, TextTranscriber
+from dataset import IAM, iam_dataloader
 import wandb
 import os
 
