@@ -102,7 +102,7 @@ class PATWYR(object):
                 a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
                 print('a.device', a.device)
                 print('bt.device', bt.device)
-                b = self.tt(bt[0:MAX_LEN], a)
+                b = self.tt(bt[0:MAX_LEN].to(self.device), a)
                 trgt = bt[1:].permute(1, 0)
                 loss = criterion(torch.flatten(b, end_dim=-2), torch.flatten(trgt))
                 loss.backward()
