@@ -37,11 +37,6 @@ def read_lines_text(annotation_txt):
                 data.append((os.path.join(image_dir[0], image_dir[0]+'-'+image_dir[1], spl[0]+'.png'), ' '.join(spl[8:])))
     return data
 
-# load two images
-def load_image(path):
-    array = read_image(path).squeeze(0).permute(1, 0).float()/255.0
-    return resize(array, size=64).squeeze(0).permute(1, 0)
-
 def load_text(inp, max_len=90):
     txt = ["<S>"] + list(inp) + ["<E>"]
     for i in range(max_len - len(txt)):
