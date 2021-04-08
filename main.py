@@ -84,6 +84,7 @@ class PATWYR(object):
     def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
+        self.iam_dataset_init(checkpoint_dir, annotation_txt)
         criterion = LabelSmoothingLoss(smoothing_eps, len(self.alphabet))
         train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
         val_loader = self.dataloader('val', 1, num_workers, False)
