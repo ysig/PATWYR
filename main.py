@@ -75,7 +75,7 @@ class PATWYR(object):
         self.vfe.eval()
         self.tt.eval()
 
-    def adjust_learning_rate(self, lr, lr_decay):
+    def adjust_learning_rate(self, epoch, lr, lr_decay):
         """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
         lr = lr * (0.5 ** (epoch // lr_decay))
         for param_group in self.optimizer.param_groups:
@@ -92,7 +92,7 @@ class PATWYR(object):
             wandb.watch(self.vfe)
             wandb.watch(self.tt)
         for i in trange(self.epochs, epochs):
-            self.adjust_learning_rate(lr, lr_decay)
+            self.adjust_learning_rate(i, lr, lr_decay)
             hypo, ref = [], []
             total_loss = 0
             dim1 = 0
