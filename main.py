@@ -52,9 +52,9 @@ class PATWYR(object):
         if purpose == 'train':
             indices = range(6482)
         elif purpose == 'val':
-            inidices = range(6482, 6482 + 976)
+            indices = range(6482, 6482 + 976)
         else:
-            inidices = range(6482 + 976, 6482 + 976 + 2914)
+            indices = range(6482 + 976, 6482 + 976 + 2914)
         dl = iam_dataloader(self.iam_dataset, batch_size, num_workers, pin_memory, indices)
         return dl
 
