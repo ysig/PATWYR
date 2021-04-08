@@ -23,8 +23,8 @@ class Metrics(object):
             ]
         )
 
-    def cer(predictions, references):
+    def cer(self, predictions, references):
         return jiwer.wer(references, predictions, truth_transform=self.cer_transform, hypothesis_transform=self.cer_transform)
 
-    def wer(predictions, references):
+    def wer(self, predictions, references):
         return jiwer.wer(references, predictions)

@@ -3,7 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import torchvision
 import math
-from dataset import load_image
+from dataset import load_image, load_text, ALPHABET, MAX_LEN
 
 class ResNetFeatures(nn.Module):
     def __init__(self, pretrained=True):
@@ -19,7 +19,7 @@ class ResNetFeatures(nn.Module):
 
     def forward(self, x):
         # From https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
-        x = self.resnet.conv1(x.unsqueeze(1).repeat(1, 3, 1, 1))
+        x = self.resnet.conv1(x.repeat(1, 3, 1, 1))
         x = self.resnet.bn1(x)
         x = self.resnet.relu(x)
         x = self.resnet.maxpool(x)
@@ -34,16 +34,16 @@ class ResNetFeatures(nn.Module):
         return x
 
 class VisualFeatureEncoder(nn.Module):
-    def __init__(self, f=1024, num_heads=8, num_layers=4, dropout=0.1):
+    def __init__(self, f=1024, num_heads=8, num_layers=4, dropout=0.1, text_len=100):
         super().__init__()
         self.resnet = ResNetFeatures()
         self.fc = nn.Linear(f*4, f)
         self.pe = PositionalEncoding(f)
         self.fc_bar = nn.Linear(f, f)
         # self.trans = TransformerDecoder(f)
-        self.fc_hat = nn.Linear(140, 89)
+        self.fc_hat = nn.Linear(140, text_len)
         self.layer_norm = nn.LayerNorm(f)
-        self.layer_norm2 = nn.LayerNorm(89)
+        self.layer_norm2 = nn.LayerNorm(text_len)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
 
@@ -79,7 +79,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TextTranscriber(nn.Module):
-    def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1):
+    def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
         super().__init__()
         self.ebl = nn.Embedding(dict_size, f)
         self.pe = PositionalEncoding(f)
@@ -90,6 +90,7 @@ class TextTranscriber(nn.Module):
         self.linear = nn.Linear(f, dict_size)
         self.alphabet = alphabet
         self.inv_alphabet = {j: i for i, j in alphabet.items()}
+        self.text_len = text_len
         
 
     def generate_square_subsequent_mask(self, sz):
@@ -128,18 +129,18 @@ class TextTranscriber(nn.Module):
     @torch.no_grad()
     def gen(self, y):
         out = []
-        fs = self.alphabet["<F>"]
+        fs = self.alphabet["<E>"]
         for i in range(y.size()[1]):
             img = y[:,i].unsqueeze(1)
-            xp = torch.LongTensor([alphabet["<S>"]])
-            for j in range(89):
+            xp = torch.LongTensor([self.alphabet["<S>"]]).to(y.device)
+            for j in range(self.text_len):
                 x = self.ebl(xp)
                 x = self.pe(x)
                 x = F.softmax(self.transformer_encoder(x), dim=2)
                 x = self.transformer_decoder(img[:j+1, :, :], x)
                 x = self.linear(x).permute(1, 0, 2).contiguous()
                 a = torch.argmax(x, keepdim=True, dim=2).squeeze(2).squeeze(0)
-                xp = torch.cat([torch.LongTensor([alphabet["<S>"]]), a], dim=0)
+                xp = torch.cat([torch.LongTensor([self.alphabet["<S>"]]), a], dim=0)
                 if xp[-1] == fs:
                     break
             out.append(self.to_text(xp))
@@ -154,10 +155,9 @@ if __name__ == "__main__":
     import PIL
 
     # load two images
-
     def load_batch_image():
         # Each batch should have 
-        return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, 3)], dim=0)
+        return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, 3)], dim=0).unsqueeze(1)
 
     character_dict = dict()
     def get(x):
@@ -170,27 +170,20 @@ if __name__ == "__main__":
             return a
 
     TXT = ["A|MOVE|to|stop|Mr.|Gaitskell|from", "nominating|any|more|Labour|life|Peers"]
-    def load_text(i, max_len=90):
-        inp = TXT[i]
-        txt = ["<S>"] + list(inp) + ["<E>"]
-        for i in range(max_len - len(txt)):
-            txt.append("<P>")        
-        t = torch.LongTensor([get(b) for b in txt])
-        return t.unsqueeze(1)
+    def load_text_tensor(txt):
+        return torch.LongTensor([ALPHABET[t] for t in load_text(txt)]).unsqueeze(1)
 
     def load_batch_text():
-        return torch.cat([load_text(i) for i in range(2)], dim=1)
+        return torch.cat([load_text_tensor(TXT[i]) for i in range(2)], dim=1)
 
-    alphabet = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*': 8, '+': 9, ',': 10, '-': 11, '.': 12, '/': 13, '0': 14, '1': 15, '2': 16, '3': 17, '4': 18, '5': 19, '6': 20, '7': 21, '8': 22, '9': 23, ':': 24, ';': 25, '<F>': 26, '<P>': 27, '<S>': 28, '?': 29, 'A': 30, 'B': 31, 'C': 32, 'D': 33, 'E': 34, 'F': 35, 'G': 36, 'H': 37, 'I': 38, 'J': 39, 'K': 40, 'L': 41, 'M': 42, 'N': 43, 'O': 44, 'P': 45, 'Q': 46, 'R': 47, 'S': 48, 'T': 49, 'U': 50, 'V': 51, 'W': 52, 'X': 53, 'Y': 54, 'Z': 55, 'a': 56, 'b': 57, 'c': 58, 'd': 59, 'e': 60, 'f': 61, 'g': 62, 'h': 63, 'i': 64, 'j': 65, 'k': 66, 'l': 67, 'm': 68, 'n': 69, 'o': 70, 'p': 71, 'q': 72, 'r': 73, 's': 74, 't': 75, 'u': 76, 'v': 77, 'w': 78, 'x': 79, 'y': 80, 'z': 81, '|': 82}
-    vfe = VisualFeatureEncoder()
-    tt = TextTranscriber(alphabet)
+    vfe = VisualFeatureEncoder(text_len=MAX_LEN)
+    tt = TextTranscriber(ALPHABET, text_len=MAX_LEN)
     a = vfe(load_batch_image())
     bt = load_batch_text()
-    b = tt(bt[0:89, :], a)
+    print(bt.size())
+    b = tt(bt[0:tt.text_len, :], a)
     criterion = nn.CrossEntropyLoss()
-    cs, bs = bt[1:, :].size()
-    N = cs*bs
-    loss = criterion(b.view(N, -1), bt[1:, :].view(N))
+    loss = criterion(torch.flatten(b, end_dim=-2), torch.flatten(bt[1:, :]))
     loss.backward()
     out = tt.gen(a)
     print(out)

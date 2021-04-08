@@ -9,6 +9,9 @@ from torchvision.transforms.functional import resize, pil_to_tensor
 import os
 import PIL
 
+MAX_LEN = 95
+ALPHABET = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*': 8, '+': 9, ',': 10, '-': 11, '.': 12, '/': 13, '0': 14, '1': 15, '2': 16, '3': 17, '4': 18, '5': 19, '6': 20, '7': 21, '8': 22, '9': 23, ':': 24, ';': 25, '<E>': 26, '<P>': 27, '<S>': 28, '?': 29, 'A': 30, 'B': 31, 'C': 32, 'D': 33, 'E': 34, 'F': 35, 'G': 36, 'H': 37, 'I': 38, 'J': 39, 'K': 40, 'L': 41, 'M': 42, 'N': 43, 'O': 44, 'P': 45, 'Q': 46, 'R': 47, 'S': 48, 'T': 49, 'U': 50, 'V': 51, 'W': 52, 'X': 53, 'Y': 54, 'Z': 55, 'a': 56, 'b': 57, 'c': 58, 'd': 59, 'e': 60, 'f': 61, 'g': 62, 'h': 63, 'i': 64, 'j': 65, 'k': 66, 'l': 67, 'm': 68, 'n': 69, 'o': 70, 'p': 71, 'q': 72, 'r': 73, 's': 74, 't': 75, 'u': 76, 'v': 77, 'w': 78, 'x': 79, 'y': 80, 'z': 81, '|': 82}
+
 def load_image(path, max_len=2227):
     img = PIL.Image.open(path)
     array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
@@ -21,7 +24,7 @@ def gen_alphabet(data):
     for _, y in data:
         data_ |= set(y)
     data_.add('<S>')
-    data_.add('<F>')
+    data_.add('<E>')
     data_.add('<P>')
     return {d: i for i, d in enumerate(sorted(list(data_)))}
 
@@ -38,9 +41,9 @@ def read_lines_text(annotation_txt):
                 data.append((os.path.join(image_dir[0], image_dir[0]+'-'+image_dir[1], spl[0]+'.png'), ' '.join(spl[8:])))
     return data
 
-def load_text(inp, max_len=90):
+def load_text(inp):
     txt = ["<S>"] + list(inp) + ["<E>"]
-    for i in range(max_len - len(txt)):
+    for i in range(MAX_LEN + 1 - len(txt)):
         txt.append("<P>")
     return txt
 
