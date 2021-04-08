@@ -58,5 +58,5 @@ class IAM(Dataset):
         txt = torch.LongTensor([self.alphabet(t) for t in load_text(txt)]).unsqueeze(0)
         return image, txt
 
-def iam_dataloader(dataset, image_folder, batch_size, num_workers, pin_memory, subset_indices=None):
+def iam_dataloader(dataset, batch_size, num_workers, pin_memory):
     return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)

@@ -55,7 +55,7 @@ class PATWYR(object):
             inidices = range(6482, 6482 + 976)
         else:
             inidices = range(6482 + 976, 6482 + 976 + 2914)
-        dl = iam_dataloader(self.iam_dataset, annotation_txt, image_folder, batch_size, num_workers, pin_memory, indices)
+        dl = iam_dataloader(self.iam_dataset, batch_size, num_workers, pin_memory, indices)
         return dl
 
     def iam_dataset_init(self, annotation_txt, image_folder):
