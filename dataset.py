@@ -58,7 +58,7 @@ class IAM(Dataset):
         img_path, txt = self.data[idx]
         img = load_image(os.path.join(self.image_folder, img_path))
         txt = torch.LongTensor([self.alphabet[t] for t in load_text(txt)]).unsqueeze(0)
-        return image, txt
+        return img, txt
 
 def iam_dataloader(dataset, batch_size, num_workers, pin_memory, subset_indices=None):
     if subset_indices is not None:
