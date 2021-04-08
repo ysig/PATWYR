@@ -1,5 +1,5 @@
 from torch import nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Subset, Dataset, DataLoader
 from torch.nn import functional as F
 import torchvision
 import math
@@ -60,5 +60,5 @@ class IAM(Dataset):
 
 def iam_dataloader(dataset, batch_size, num_workers, pin_memory, subset_indices=None):
     if subset_indices is not None:
-        dataset = torch.utils.data.Subset(dataset, subset_indices)
+        dataset = Subset(dataset, subset_indices)
     return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
