@@ -118,7 +118,7 @@ class PATWYR(object):
             self.eval_()
             hypo, ref = [], []
             for img, txt in val_loader:
-                hypo += self.tt.gen(self.vfe(img).to(self.device))
+                hypo += self.tt.gen(self.vfe(img.to(self.device)))
                 ref += self.tt.to_text(txt.squeeze(1))
                 break
             vwer, vcer = self.metrics(hypo, ref)
