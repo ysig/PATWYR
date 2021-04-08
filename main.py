@@ -103,7 +103,6 @@ class PATWYR(object):
                 print('a.device', a.device)
                 print('bt.device', bt.device)
                 print('bt[0:MAX_LEN].device', bt[0:MAX_LEN].device)
-                print('self.tt.device', self.tt.device)
                 b = self.tt(bt[0:MAX_LEN], a)
                 trgt = bt[1:].permute(1, 0)
                 loss = criterion(torch.flatten(b, end_dim=-2), torch.flatten(trgt))
