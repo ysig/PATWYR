@@ -140,7 +140,7 @@ class TextTranscriber(nn.Module):
                 x = self.transformer_decoder(img[:j+1, :, :], x)
                 x = self.linear(x).permute(1, 0, 2).contiguous()
                 a = torch.argmax(x, keepdim=True, dim=2).squeeze(2).squeeze(0)
-                xp = torch.cat([torch.LongTensor([self.alphabet["<S>"]]), a], dim=0)
+                xp = torch.cat([torch.LongTensor([self.alphabet["<S>"]]).to(a.device), a], dim=0)
                 if xp[-1] == fs:
                     break
             out.append(self.to_text(xp))
