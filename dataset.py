@@ -18,7 +18,7 @@ def gen_alphabet(data):
     data_.add('<P>')
     return {d: i for i, d in enumerate(sorted(list(data_)))}
 
-def read_lines_txt(annotation_txt):
+def read_lines_text(annotation_txt):
     data = []
     with open(annotation_txt, 'r') as f:
         for line in f.readlines():
