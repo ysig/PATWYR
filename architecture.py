@@ -148,7 +148,6 @@ class TextTranscriber(nn.Module):
 if __name__ == "__main__":
     import torchvision
     import numpy as np
-    from torchvision.io import read_image
     from torchvision.transforms.functional import resize, pil_to_tensor
     import os
     import PIL
