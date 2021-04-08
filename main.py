@@ -78,7 +78,7 @@ class PATWYR(object):
     def adjust_learning_rate(self, epoch, lr, lr_decay):
         """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
         lr = lr * (0.5 ** (epoch // lr_decay))
-        for param_group in self.optimizer.param_groups:
+        for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
     def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps):
@@ -99,7 +99,7 @@ class PATWYR(object):
             self.train_()
             for img, txt in train_loader:
                 dim1 += img.size()[0]
-                optimizer.zero_grad()
+                self.optim.zero_grad()
                 a, bt = self.vfe(img.to(self.device)), txt.permute(1, 0).to(self.device)
                 b = self.tt(bt[0:89], a)
                 loss = criterion(b, bt[1:])
