@@ -108,12 +108,12 @@ class TextTranscriber(nn.Module):
     @torch.no_grad()
     def to_text_(self, x):
         txt = []
-        p = {self.alphabet["<F>"], self.alphabet["<P>"]}
-        s = self.alphabet["<S>"]
+        p = {self.alphabet["<E>"]}
+        s = {self.alphabet["<S>"], self.alphabet["<P>"]}
         for idx in x.cpu().numpy():
             if idx in p:
                 break
-            if idx == s:
+            if idx in s:
                 continue
             txt.append(self.inv_alphabet[idx])
         return "".join(txt)
