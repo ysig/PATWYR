@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from torch.utils.data import Subset, Dataset, DataLoader
 from torch.nn import functional as F
