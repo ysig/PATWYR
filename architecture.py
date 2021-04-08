@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     def load_batch_image():
         # Each batch should have 
-        return torch.cat([load_image(os.path.join('debug-data', f"{i}.png") for i in range(1, 3)], dim=0)
+        return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, 3)], dim=0)
 
     character_dict = dict()
     def get(x):
