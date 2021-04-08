@@ -35,7 +35,7 @@ class ResNetFeatures(nn.Module):
 
 class VisualFeatureEncoder(nn.Module):
     def __init__(self, f=1024, num_heads=8, num_layers=4, dropout=0.1, text_len=100):
-        super().__init__()
+        super(VisualFeatureEncoder, self).__init__()
         self.resnet = ResNetFeatures()
         self.fc = nn.Linear(f*4, f)
         self.pe = PositionalEncoding(f)
@@ -80,7 +80,7 @@ class PositionalEncoding(nn.Module):
 
 class TextTranscriber(nn.Module):
     def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
-        super().__init__()
+        super(TextTranscriber, self).__init__()
         self.ebl = nn.Embedding(dict_size, f)
         self.pe = PositionalEncoding(f)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
@@ -101,7 +101,7 @@ class TextTranscriber(nn.Module):
     def forward(self, x, y):
         x = self.ebl(x)
         x = self.pe(x)
-        a = self.generate_square_subsequent_mask(x.size()[0])
+        a = self.generate_square_subsequent_mask(x.size()[0]).to(x.device)
         x = F.softmax(self.transformer_encoder(x, a), dim=2)
         x = self.transformer_decoder(y, x, a, a)
         return self.linear(x).permute(1, 0, 2).contiguous()
