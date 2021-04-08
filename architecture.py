@@ -3,6 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import torchvision
 import math
+from dataset import load_image
 
 class ResNetFeatures(nn.Module):
     def __init__(self, pretrained=True):
@@ -153,16 +154,10 @@ if __name__ == "__main__":
     import PIL
 
     # load two images
-    def load_image(path, max_len=2227):
-        img = PIL.Image.open(os.path.join('debug-data', path))
-        array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
-        img = resize(array, size=64).permute(0, 2, 1)
-        a = nn.ZeroPad2d((0, max_len-img.size()[2], 0, 0))(img)
-        return a
 
     def load_batch_image():
         # Each batch should have 
-        return torch.cat([load_image(f"{i}.png") for i in range(1, 3)], dim=0)
+        return torch.cat([load_image(os.path.join('debug-data', f"{i}.png") for i in range(1, 3)], dim=0)
 
     character_dict = dict()
     def get(x):

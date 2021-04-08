@@ -8,6 +8,12 @@ from torchvision.transforms.functional import resize, pil_to_tensor
 import os
 import PIL
 
+def load_image(path, max_len=2227):
+    img = PIL.Image.open(path)
+    array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
+    img = resize(array, size=64).permute(0, 2, 1)
+    a = nn.ZeroPad2d((0, max_len-img.size()[2], 0, 0))(img)
+    return a
 
 def gen_alphabet(data):
     data_ = set()
