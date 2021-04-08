@@ -139,12 +139,12 @@ class PATWYR(object):
         tt = TextTranscriber(self.alphabet)
         optimizer = optim.Adam(list(vfe.parameters()) + list(tt.parameters()), lr=0.001)
         if checkpoint is not None:
-            a, b, c, self.metrics_ = torch.load(checkpoint)
+            a, b, c, self.metrics_, self.epochs = torch.load(checkpoint)
             vfe.load_state_dict(a)
             tt.load_state_dict(b)
             optimizer.load_state_dict(c)
         else:
-            self.metrics_ = {}
+            self.metrics_, self.epochs = {}, 0
         self.vfe, self.tt, self.optim = vfe.to(self.device), tt.to(self.device), optimizer
 
     def checkpoint(self, metric, step):
