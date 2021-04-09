@@ -52,4 +52,4 @@ class Metrics(object):
         return np.mean([jiwer.wer(r, p, truth_transform=self.cer_transform, hypothesis_transform=self.cer_transform) for p, r in zip(predictions, references)])
 
     def wer(self, predictions, references):
-        return np.mean([jiwer.wer(r, p, truth_transform=self.wer_transform, hypothesis_transform=self.wer_transform) for p, r in zip(predictions, references)]
+        return np.mean([jiwer.wer(r, p, truth_transform=self.wer_transform, hypothesis_transform=self.wer_transform) for p, r in zip(predictions, references)])
