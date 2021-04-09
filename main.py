@@ -114,9 +114,13 @@ class PATWYR(object):
             
             self.eval_()
             hypo, ref = [], []
-            for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
-                hypo += self.tt.gen(self.vfe(img.to(self.device)))
-                ref += self.tt.to_text(txt.squeeze(1))
+            with torch.no_grad():
+                for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
+                    a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
+                    b = self.tt(bt[0:MAX_LEN], a)
+                    trgt = bt[1:].permute(1, 0)
+                    hypo += self.tt.to_text(torch.argmax(b, dim=2))
+                    ref += self.tt.to_text(trgt)
             vwer, vcer = self.metrics(hypo, ref)
             self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i)
 
@@ -125,7 +129,7 @@ class PATWYR(object):
         self.eval_()
         hypo, ref = [], []
         for img, txt in val_loader:
-            hypo += self.tt.gen(self.vfe(img))
+            hypo += self.tt.gen(self.vfe(img.to(self.device)))
             ref += self.tt.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
 
