@@ -23,7 +23,7 @@ class Bartospace(tr.AbstractTransform):
 
         for sentence in inp:
             chars.extend(self.process_string(sentence))
-
+        print(chars)
         return chars
 
 
@@ -40,7 +40,7 @@ class Metrics(object):
 
         self.wer_transform = tr.Compose(
             [
-                Bartospace(),
+                SentencesToListOfCharacters(),
                 tr.RemoveMultipleSpaces(),
                 tr.Strip(),
             ]
