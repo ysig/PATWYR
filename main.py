@@ -111,7 +111,6 @@ class PATWYR(object):
                 self.optim.step()
                 hypo += self.tt.to_text(torch.argmax(b, dim=2))
                 ref += self.tt.to_text(bt)
-                break
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
             
@@ -120,7 +119,6 @@ class PATWYR(object):
             for img, txt in val_loader:
                 hypo += self.tt.gen(self.vfe(img.to(self.device)))
                 ref += self.tt.to_text(txt.squeeze(1))
-                break
             vwer, vcer = self.metrics(hypo, ref)
             self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i)
 
