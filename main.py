@@ -3,7 +3,7 @@ import torch
 from torch import nn, optim
 from torch.nn import functional as F
 import torchvision
-from tqdm import tqdm, trange
+from tqdm.auto import tqdm, trange
 from metrics import Metrics
 from architecture import VisualFeatureEncoder, TextTranscriber
 from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
