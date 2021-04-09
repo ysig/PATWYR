@@ -111,7 +111,7 @@ class TextTranscriber(nn.Module):
         txt = []
         p = {self.alphabet["<E>"]}
         s = {self.alphabet["<S>"], self.alphabet["<P>"]}
-        for idx in x.cpu().numpy():
+        for idx in x:
             if idx in p:
                 break
             if idx in s:
@@ -121,30 +121,48 @@ class TextTranscriber(nn.Module):
 
     @torch.no_grad()
     def to_text(self, x):
-        if len(x.size()) == 2:
-            return [self.to_text_(x[i]) for i in range(x.size()[0])]
+        x = x.cpu().numpy()
+        if len(x.shape) == 2:
+            return [self.to_text_(x[i]) for i in range(x.shape[0])]
         else:
             return self.to_text_(x)
 
     @torch.no_grad()
     def gen(self, y):
-        out = []
-        fs = self.alphabet["<E>"]
-        for i in range(y.size()[1]):
-            img = y[:,i].unsqueeze(1)
-            xp = torch.LongTensor([self.alphabet["<S>"]]).to(y.device)
-            for j in range(self.text_len):
-                x = self.ebl(xp)
-                x = self.pe(x)
-                x = F.softmax(self.transformer_encoder(x), dim=2)
-                x = self.transformer_decoder(img[:j+1, :, :], x)
-                x = self.linear(x).permute(1, 0, 2).contiguous()
-                a = torch.argmax(x, keepdim=True, dim=2).squeeze(2).squeeze(0)
-                xp = torch.cat([torch.LongTensor([self.alphabet["<S>"]]).to(a.device), a], dim=0)
-                if xp[-1] == fs:
-                    break
-            out.append(self.to_text(xp))
-        return out
+        init = torch.LongTensor([self.alphabet["<S>"]]).unsqueeze(1).repeat(1, y.size()[1]).to(y.device)
+        xp = torch.clone(init)
+        for j in range(self.text_len):
+            x = self.ebl(xp)
+            x = self.pe(x)
+            x = F.softmax(self.transformer_encoder(x), dim=2)
+            x = self.transformer_decoder(y[:j+1, :, :], x)
+            x = self.linear(x).permute(1, 0, 2).contiguous()
+            a = torch.argmax(x, dim=2)
+            xp = torch.cat([init, a.permute(1, 0)], dim=0)
+            # if xp[-1] == fs:
+            #     break
+        return self.to_text(xp.permute(1, 0))
+
+    # cpu-only
+    # @torch.no_grad()
+    # def gen(self, y):
+    #     out = []
+    #     fs = self.alphabet["<E>"]
+    #     for i in range(y.size()[1]):
+    #         img = y[:,i].unsqueeze(1)
+    #         xp = torch.LongTensor([self.alphabet["<S>"]]).to(y.device)
+    #         for j in range(self.text_len):
+    #             x = self.ebl(xp)
+    #             x = self.pe(x)
+    #             x = F.softmax(self.transformer_encoder(x), dim=2)
+    #             x = self.transformer_decoder(img[:j+1, :, :], x)
+    #             x = self.linear(x).permute(1, 0, 2).contiguous()
+    #             a = torch.argmax(x, keepdim=True, dim=2).squeeze(2).squeeze(0)
+    #             xp = torch.cat([torch.LongTensor([self.alphabet["<S>"]]).to(a.device), a], dim=0)
+    #             if xp[-1] == fs:
+    #                 break
+    #         out.append(self.to_text(xp))
+    #     return out
 
 
 if __name__ == "__main__":

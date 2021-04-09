@@ -86,7 +86,7 @@ class PATWYR(object):
         NA = len(self.alphabet)
         criterion = LabelSmoothingLoss(smoothing_eps, NA)
         train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
-        val_loader = self.dataloader('val', 1, num_workers, False)
+        val_loader = self.dataloader('val', batch_size, num_workers, False)
         if self.wandb:
             wandb.watch(self.vfe)
             wandb.watch(self.tt)
@@ -97,7 +97,7 @@ class PATWYR(object):
             dim1 = 0
             self.train_()
             for img, txt in tqdm(train_loader, total=len(train_loader), desc='Training'):
-                dim1 += img.size()[0]
+                dim1 += 1#img.size()[0]
                 self.optim.zero_grad()
                 a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
                 b = self.tt(bt[0:MAX_LEN], a)
