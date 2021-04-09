@@ -107,7 +107,7 @@ class PATWYR(object):
                 total_loss += loss.item()
                 self.optim.step()
                 hypo += self.tt.to_text(torch.argmax(b, dim=2))
-                ref += self.tt.to_text(bt)
+                ref += self.tt.to_text(trgt)
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
             
