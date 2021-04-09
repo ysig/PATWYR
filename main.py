@@ -100,9 +100,6 @@ class PATWYR(object):
                 dim1 += img.size()[0]
                 self.optim.zero_grad()
                 a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
-                print('a.device', a.device)
-                print('bt.device', bt.device)
-                print('bt[0:MAX_LEN].device', bt[0:MAX_LEN].device)
                 b = self.tt(bt[0:MAX_LEN], a)
                 trgt = bt[1:].permute(1, 0)
                 loss = criterion(torch.flatten(b, end_dim=-2), torch.flatten(trgt))
