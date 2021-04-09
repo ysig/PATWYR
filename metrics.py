@@ -24,7 +24,6 @@ class Bartospace(tr.AbstractTransform):
 
         for sentence in inp:
             chars.extend(self.process_string(sentence))
-        print(chars)
         return chars
 
 

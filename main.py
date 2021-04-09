@@ -76,7 +76,7 @@ class PATWYR(object):
     def adjust_learning_rate(self, epoch, lr, lr_decay):
         """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
         lr = lr * (0.5 ** (epoch // lr_decay))
-        print('epoch:',epoch,'lr:',lr)
+        # print('epoch:',epoch,'lr:',lr)
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
