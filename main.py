@@ -96,7 +96,7 @@ class PATWYR(object):
             total_loss = 0
             dim1 = 0
             self.train_()
-            for img, txt in train_loader:
+            for img, txt in tqdm(train_loader, total=len(train_loader), desc='Training'):
                 dim1 += img.size()[0]
                 self.optim.zero_grad()
                 a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
@@ -113,7 +113,7 @@ class PATWYR(object):
             
             self.eval_()
             hypo, ref = [], []
-            for img, txt in val_loader:
+            for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
                 hypo += self.tt.gen(self.vfe(img.to(self.device)))
                 ref += self.tt.to_text(txt.squeeze(1))
             vwer, vcer = self.metrics(hypo, ref)
