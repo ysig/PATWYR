@@ -42,7 +42,7 @@ class PATWYR(object):
         # self.device
         self.alphabet = ALPHABET
         self.metrics_obj = Metrics()
-        self.wandb = False
+        self.wandb = wandb
         self.device = torch.device(device)
         self.load_model(checkpoint)
 
