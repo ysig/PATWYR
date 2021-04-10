@@ -171,7 +171,7 @@ if __name__ == "__main__":
     p = add_command('train', 'main.py', 'train -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
     p.add_argument('-i', '--iam-image-folder', required=True, help='Image Folder')
-    p.add_argument('--lr', default=0.0002, help='Directory containing dataset')
+    p.add_argument('--lr', default=0.0002, type=float, help='Directory containing dataset')
     p.add_argument('--lr_decay', default=20, type=int, help='Directory containing dataset')
     p.add_argument('--epochs', default=60, type=int, help='Directory containing dataset')
     p.add_argument('-d', '--device', default='cuda', help='Directory containing dataset')
