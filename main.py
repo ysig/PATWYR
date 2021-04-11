@@ -181,7 +181,7 @@ if __name__ == "__main__":
     p.add_argument('-w', '--num_workers', type=int, default=4)
     p.add_argument('-se', '--smoothing_eps', type=float, default=0.4)
     p.add_argument('-c', '--checkpoint-dir', required=True, help='Directory containing dataset')
-    p.add_argument('-bs', '--batch-size', default=32, help='Directory containing dataset')
+    p.add_argument('-bs', '--batch-size', default=32, type=int, help='Directory containing dataset')
     p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
     
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
