@@ -85,8 +85,8 @@ class PATWYR(object):
             os.makedirs(checkpoint_dir, exist_ok=True)
         self.iam_dataset_init(annotation_txt, image_folder)
         NA = len(self.alphabet)
-        # criterion = LabelSmoothingLoss(smoothing_eps, NA)
-        criterion = nn.CrossEntropyLoss()
+        criterion = LabelSmoothingLoss(smoothing_eps, NA)
+        # criterion = nn.CrossEntropyLoss()
         train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
         val_loader = self.dataloader('val', batch_size, num_workers, False)
         if self.wandb:
