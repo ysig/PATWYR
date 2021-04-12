@@ -90,6 +90,7 @@ class PATWYR(object):
         train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
         val_loader = self.dataloader('val', batch_size, num_workers, False)
         if self.wandb:
+            wandb.init(config={"epochs": epochs, "batch_size": batch_size, "lr": lr, "lr_decay": lr_decay, "smoothing_eps": smoothing_eps})
             wandb.watch(self.vfe)
             wandb.watch(self.tt)
         for i in trange(self.epochs, epochs):
