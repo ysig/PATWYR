@@ -7,7 +7,7 @@ from torchvision.models.resnet import Bottleneck
 from dataset import load_image, load_text, ALPHABET, MAX_LEN
 
 class ResNetFeatures(nn.Module):
-    def __init__(self, pretrained=True):
+    def __init__(self, pretrained=False):
         super().__init__()
         # Input images x of handwritten text-lines, which might have
         # arbitrary lengths, are first processed by a Convolutional
@@ -16,20 +16,26 @@ class ResNetFeatures(nn.Module):
         # our backbone convolutional architecture. 
         # Such visual feature representation has a contextualized global view of the
         # whole input image while remaining compact.
-        self.resnet = torchvision.models.resnet50(pretrained=False)
+        self.resnet = torchvision.models.resnet50(pretrained=pretrained)
         # self.layer4 = self.resnet._make_layer(Bottleneck, 512, 3, stride=1, dilate=False)
 
     def forward(self, x):
         # From https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
         x = self.resnet.conv1(x.repeat(1, 3, 1, 1))
         x = self.resnet.bn1(x)
+        print(x.size())
         x = self.resnet.relu(x)
+        print(x.size())
         x = self.resnet.maxpool(x)
+        print(x.size())
         x = self.resnet.layer1(x)
+        print(x.size())
         x = self.resnet.layer2(x)
+        print(x.size())
         x = self.resnet.layer3(x)
-        # print(x.size())
+        print(x.size())
         # print(self.resnet.layer3)
+        print(self.resnet.layer4(x).size())
         # x = self.layer3(x)
         # x = self.layer4(x)
         # print(x.size())
@@ -49,7 +55,8 @@ class VisualFeatureEncoder(nn.Module):
         # self.trans = TransformerDecoder(f)
         self.fc_hat = nn.Linear(140, text_len)
         self.layer_norm = nn.LayerNorm(f)
-        self.layer_norm2 = nn.LayerNorm(text_len)
+        # self.layer_norm2 = nn.LayerNorm(text_len)
+        self.layer_norm2 = nn.LayerNorm(140)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
 
@@ -63,9 +70,9 @@ class VisualFeatureEncoder(nn.Module):
         x = self.pe(x.permute(1, 0, 2).contiguous())
         x = self.layer_norm(F.relu(self.fc_bar(x)))
         x = F.softmax(self.transformer_encoder(x), dim=2)
-        x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
-        x = self.layer_norm2(x).permute(2, 1, 0)
-        return x
+        # x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
+        # x = self.layer_norm2(x).permute(2, 1, 0)
+        return self.layer_norm(x)
 
 
 class PositionalEncoding(nn.Module):
@@ -109,7 +116,8 @@ class TextTranscriber(nn.Module):
         x = self.pe(x)
         a = self.generate_square_subsequent_mask(x.size()[0]).to(x.device)
         x = F.softmax(self.transformer_encoder(x, a), dim=2)
-        x = self.transformer_decoder(y, x, a, a)
+        x = self.transformer_decoder(x, y, a)
+        # print(x.size())
         return self.linear(x).permute(1, 0, 2).contiguous()
 
     @torch.no_grad()
