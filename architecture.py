@@ -3,6 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 import torchvision
 import math
+from torchvision.models.resnet import Bottleneck
 from dataset import load_image, load_text, ALPHABET, MAX_LEN
 
 class ResNetFeatures(nn.Module):
@@ -15,7 +16,8 @@ class ResNetFeatures(nn.Module):
         # our backbone convolutional architecture. 
         # Such visual feature representation has a contextualized global view of the
         # whole input image while remaining compact.
-        self.resnet = torchvision.models.resnet50(pretrained=True)
+        self.resnet = torchvision.models.resnet50(pretrained=False)
+        # self.layer4 = self.resnet._make_layer(Bottleneck, 512, 3, stride=1, dilate=False)
 
     def forward(self, x):
         # From https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
@@ -26,7 +28,11 @@ class ResNetFeatures(nn.Module):
         x = self.resnet.layer1(x)
         x = self.resnet.layer2(x)
         x = self.resnet.layer3(x)
-        # x = self.resnet.layer4(x)
+        # print(x.size())
+        # print(self.resnet.layer3)
+        # x = self.layer3(x)
+        # x = self.layer4(x)
+        # print(x.size())
         
         # x = self.avgpool(x)
         # x = torch.flatten(x, 1)
