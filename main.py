@@ -157,8 +157,7 @@ class PATWYR(object):
         if self.wandb:
             # print('Wandb logging')
             # print(metrics)
-            images = {'images': [wandb.Image(FTV.to_pil_image(x), caption=t) for x, i in imgs]}
-
+            images = {'images': [wandb.Image(x, caption=t) for x, t in imgs]}
             wandb.log(metrics, step=step)
             # wandb.log(images, step=step)
 
