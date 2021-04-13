@@ -96,11 +96,9 @@ class PATWYR(object):
         for i in trange(self.epochs, epochs):
             self.adjust_learning_rate(i, lr, lr_decay)
             hypo, ref = [], []
-            total_loss = 0
-            dim1 = 0
+            total_loss, dim1 = 0, 0
             self.train_()
             for img, txt in tqdm(train_loader, total=len(train_loader), desc='Training'):
-                dim1 += 1#img.size()[0]
                 self.optim.zero_grad()
                 a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
                 b = self.tt(bt[0:MAX_LEN], a)
@@ -110,7 +108,8 @@ class PATWYR(object):
                     loss += criterion(b[i], trgt[i])
                 loss.backward()
                 self.optim.step()
-                total_loss += loss.detach().item()/trgt.size()[0]
+                total_loss += loss.detach().item()
+                dim1 += trgt.size()[0]
                 hypo += self.tt.to_text(torch.argmax(b, dim=2))
                 ref += self.tt.to_text(trgt)
             twer, tcer = self.metrics(hypo, ref)
