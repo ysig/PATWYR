@@ -106,9 +106,16 @@ class TextTranscriber(nn.Module):
         self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
         self.linear = nn.Linear(f, dict_size)
         self.alphabet = alphabet
+        self.f = f
         self.inv_alphabet = {j: i for i, j in alphabet.items()}
         self.text_len = text_len
-        
+        self.init_weights()
+
+    def init_weights(self):
+        initrange = 0.1
+        self.ebl.weight.data.uniform_(-initrange, initrange)
+        self.linear.bias.data.zero_()
+        self.linear.weight.data.uniform_(-initrange, initrange)
 
     def generate_square_subsequent_mask(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
@@ -116,11 +123,11 @@ class TextTranscriber(nn.Module):
         return mask
 
     def forward(self, x, y):
-        x = self.ebl(x)
+        x = self.ebl(x)*math.sqrt(self.f)
         x = self.pe(x)
         a = self.generate_square_subsequent_mask(x.size()[0]).to(x.device)
         # x = F.softmax(self.transformer_encoder(x, a), dim=2)
-        x = self.transformer_encoder(x, a)
+        # x = self.transformer_encoder(x, a)
         x = self.transformer_decoder(x, y, a)
         # print(x.size())
         return self.linear(x).permute(1, 0, 2).contiguous()
@@ -154,7 +161,7 @@ class TextTranscriber(nn.Module):
             x = self.ebl(xp)
             x = self.pe(x)
             # x = F.softmax(self.transformer_encoder(x), dim=2)
-            x = self.transformer_encoder(x)
+            # x = self.transformer_encoder(x)
             x = self.transformer_decoder(x, y)
             x = self.linear(x).permute(1, 0, 2).contiguous()
             a = torch.argmax(x, dim=2)
