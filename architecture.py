@@ -61,15 +61,19 @@ class VisualFeatureEncoder(nn.Module):
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
 
+    def init_weights(self):
+        initrange = 0.1
+        self.fc_bar.bias.data.zero_()
+        self.fc_bar.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x):
         # Question: input-size?
         x = self.resnet(x)
         b, f, h, w = x.size()
-        x = x.view(b, f*h, w).permute(0, 2, 1).contiguous()
+        x = x.view(b, f*h, w).permute(0, 2, 1)
         x = F.relu(self.fc(x))
         # x = self.fc(x)
-        x = self.pe(x.permute(1, 0, 2).contiguous())
+        x = self.pe(x.permute(1, 0, 2))
         x = self.layer_norm(F.relu(self.fc_bar(x)))
         # x = self.layer_norm(self.fc_bar(x))
         # x = F.softmax(self.transformer_encoder(x), dim=2)
