@@ -130,7 +130,7 @@ class TextTranscriber(nn.Module):
         # x = self.transformer_encoder(x, a)
         x = self.transformer_decoder(x, y, a)
         # print(x.size())
-        return self.linear(x).permute(1, 0, 2)
+        return self.linear(x).permute(1, 0, 2)#.contiguous()
 
     @torch.no_grad()
     def to_text_(self, x):
@@ -163,7 +163,7 @@ class TextTranscriber(nn.Module):
             # x = F.softmax(self.transformer_encoder(x), dim=2)
             # x = self.transformer_encoder(x)
             x = self.transformer_decoder(x, y)
-            x = self.linear(x).permute(1, 0, 2)
+            x = self.linear(x).permute(1, 0, 2)#.contiguous()
             a = torch.argmax(x, dim=2)
             xp = torch.cat([init, a.permute(1, 0)], dim=0)
             # if xp[-1] == fs:
