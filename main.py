@@ -147,6 +147,7 @@ class PATWYR(object):
             out = self.tt.gen(a)
             for i in range(img.size()[0]):
                 metrics_p[f'image_{i}'] = wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i]))
+            print('Wandb logging')
             wandb.log(metrics_p, step=step)
 
     def load_model(self, checkpoint):
