@@ -141,7 +141,6 @@ class PATWYR(object):
         with torch.no_grad():
             img = load_batch_image().to(self.device)
             x = self.vfe(img)
-            print(x)
             out = self.tt.gen(x)
             imgs = []
             for i in range(img.size()[0]):

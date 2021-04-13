@@ -116,7 +116,6 @@ class TextTranscriber(nn.Module):
         self.inv_alphabet = {j: i for i, j in alphabet.items()}
         self.text_len = text_len
         self.init_weights()
-        self.mask_x = self.generate_square_subsequent_mask(text_len)
 
     def init_weights(self):
         initrange = 0.1
@@ -133,7 +132,7 @@ class TextTranscriber(nn.Module):
         x = self.ebl(x)*math.sqrt(self.f)
         x = self.pe(x)
         dim = x.size()[0]
-        a = self.mask_x[:dim, :dim].to(x.device)
+        a = self.generate_square_subsequent_mask(dim).to(x.device)
         # x = F.softmax(self.transformer_encoder(x, a), dim=2)
         # x = self.transformer_encoder(x, a)
         x = self.transformer_decoder(x, y, a)
