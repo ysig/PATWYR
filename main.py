@@ -54,8 +54,7 @@ class PATWYR(object):
             indices = range(6482, 6482 + 976)
         else:
             indices = range(6482 + 976, 6482 + 976 + 2914)
-        dl = iam_dataloader(self.iam_dataset, batch_size, num_workers, pin_memory, indices)
-        return dl
+        return iam_dataloader(self.iam_dataset, batch_size, num_workers, pin_memory, indices)
 
     def iam_dataset_init(self, annotation_txt, image_folder):
         if not hasattr(self, 'iam_dataset'):
