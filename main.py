@@ -145,7 +145,7 @@ class PATWYR(object):
             img = load_batch_image()
             a = self.vfe(img)
             out = self.tt.gen(a)
-            for i in range(img.size()[0])
+            for i in range(img.size()[0]):
                 metrics_p[f'{image}_{i}'] = wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i]))
             wandb.log(metrics_p, step=step)
 
