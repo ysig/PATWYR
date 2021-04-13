@@ -147,10 +147,10 @@ class PATWYR(object):
             images = {'image': []}
             for i in range(img.size()[0]):
                 images['image'].append(wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i])))
-            print('Wandb logging')
-            print(metrics)
+            # print('Wandb logging')
+            # print(metrics)
             wandb.log(metrics, step=step)
-            wandb.log(images, step=step)
+            # wandb.log(images, step=step)
 
     def load_model(self, checkpoint):
         vfe = VisualFeatureEncoder(text_len=MAX_LEN)
