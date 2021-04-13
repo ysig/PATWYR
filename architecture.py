@@ -51,7 +51,7 @@ class VisualFeatureEncoder(nn.Module):
         super(VisualFeatureEncoder, self).__init__()
         self.resnet = ResNetFeatures()
         self.fc = nn.Linear(f*4, f)
-        self.pe = PositionalEncoding(f, 140)
+        self.pe = PositionalEncoding(f, 140, dropout)
         self.fc_bar = nn.Linear(f, f)
         # self.trans = TransformerDecoder(f)
         # self.fc_hat = nn.Linear(140, text_len)
@@ -89,8 +89,9 @@ class VisualFeatureEncoder(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, max_len):
+    def __init__(self, d_model, max_len, dropout=0.1):
         super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
@@ -101,14 +102,14 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         x = x + self.pe[:x.size(0), :]
-        return x
+        return self.dropout(x)
 
 
 class TextTranscriber(nn.Module):
     def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
         super(TextTranscriber, self).__init__()
         self.ebl = nn.Embedding(dict_size, f)
-        self.pe = PositionalEncoding(f, text_len)
+        self.pe = PositionalEncoding(f, text_len, dropout)
         # encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         # self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
         decoder_layer = nn.TransformerDecoderLayer(d_model=f, nhead=num_heads, dim_feedforward=f, dropout=dropout)
