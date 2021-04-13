@@ -68,8 +68,10 @@ class VisualFeatureEncoder(nn.Module):
 
     def forward(self, x):
         # Question: input-size?
+        # print('b, f, h, w\n', x.size())
         x = self.resnet(x)
         b, f, h, w = x.size()
+        # print('b, f, h, w\n', x.size())
         x = x.view(b, f*h, w).permute(0, 2, 1)
         x = F.relu(self.fc(x))
         # x = self.fc(x)

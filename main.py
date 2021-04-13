@@ -140,7 +140,9 @@ class PATWYR(object):
         print(metrics)
         with torch.no_grad():
             img = load_batch_image().to(self.device)
-            out = self.tt.gen(self.vfe(img))
+            x = self.vfe(img)
+            print(x)
+            out = self.tt.gen(x)
             imgs = []
             for i in range(img.size()[0]):
                 imgs.append((FTV.to_pil_image(img[i]), str(out[i])))
