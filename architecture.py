@@ -127,7 +127,7 @@ class TextTranscriber(nn.Module):
         x = self.ebl(x)*math.sqrt(self.f)
         x = self.pe(x)
         dim = x.size()[0]
-        a = self.mask_x[:dim, :dim]
+        a = self.mask_x[:dim, :dim].to(x.device)
         # x = F.softmax(self.transformer_encoder(x, a), dim=2)
         # x = self.transformer_encoder(x, a)
         x = self.transformer_decoder(x, y, a)
