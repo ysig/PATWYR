@@ -153,7 +153,8 @@ class TextTranscriber(nn.Module):
         for j in range(self.text_len):
             x = self.ebl(xp)
             x = self.pe(x)
-            x = F.softmax(self.transformer_encoder(x), dim=2)
+            # x = F.softmax(self.transformer_encoder(x), dim=2)
+            x = self.transformer_encoder(x)
             x = self.transformer_decoder(x, y)
             x = self.linear(x).permute(1, 0, 2).contiguous()
             a = torch.argmax(x, dim=2)
