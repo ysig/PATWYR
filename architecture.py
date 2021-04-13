@@ -158,6 +158,7 @@ class TextTranscriber(nn.Module):
             xp = torch.cat([init, a.permute(1, 0)], dim=0)
             # if xp[-1] == fs:
             #     break
+        print(xp)
         return self.to_text(xp.permute(1, 0))
 
     # cpu-only
