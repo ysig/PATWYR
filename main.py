@@ -212,7 +212,6 @@ if __name__ == "__main__":
     p.add_argument('-p', '--predictions', default=None, help='Directory containing dataset')
 
     args = parser.parse_args()
-
     if args.command == 'train':
         log_wandb = False
         if args.wandb_project is not None:
