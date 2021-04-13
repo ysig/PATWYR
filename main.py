@@ -141,16 +141,16 @@ class PATWYR(object):
     def log(self, metrics, step):
         print(metrics)
         if self.wandb:
-            metrics_p = metrics.copy()
             img = load_batch_image().to(self.device)
             a = self.vfe(img)
             out = self.tt.gen(a)
-            metrics_p['image'] = []
+            images = {'image': []}
             for i in range(img.size()[0]):
-                metrics_p['image'].append(wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i])))
+                images['image'].append(wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i])))
             print('Wandb logging')
-            print(metrics_p)
-            wandb.log(metrics_p, step=step)
+            print(metrics)
+            wandb.log(metrics, step=step)
+            wandb.log(images, step=step)
 
     def load_model(self, checkpoint):
         vfe = VisualFeatureEncoder(text_len=MAX_LEN)
