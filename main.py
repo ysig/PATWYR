@@ -138,6 +138,7 @@ class PATWYR(object):
             ref += self.tt.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
 
+    @torch.no_grad()        
     def log(self, metrics, step):
         print(metrics)
         if self.wandb:
@@ -145,8 +146,9 @@ class PATWYR(object):
             img = load_batch_image().to(self.device)
             a = self.vfe(img)
             out = self.tt.gen(a)
+            metrics_p['image'] = []
             for i in range(img.size()[0]):
-                metrics_p[f'image_{i}'] = wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i]))
+                metrics_p['image'].append(wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i])))
             print('Wandb logging')
             wandb.log(metrics_p, step=step)
 
