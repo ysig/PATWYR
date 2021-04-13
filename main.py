@@ -149,6 +149,7 @@ class PATWYR(object):
             for i in range(img.size()[0]):
                 metrics_p['image'].append(wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i])))
             print('Wandb logging')
+            print(metrics_p)
             wandb.log(metrics_p, step=step)
 
     def load_model(self, checkpoint):
