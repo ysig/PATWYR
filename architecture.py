@@ -63,6 +63,8 @@ class VisualFeatureEncoder(nn.Module):
 
     def init_weights(self):
         initrange = 0.1
+        self.fc.bias.data.zero_()
+        self.fc.weight.data.uniform_(-initrange, initrange)
         self.fc_bar.bias.data.zero_()
         self.fc_bar.weight.data.uniform_(-initrange, initrange)
 
@@ -73,10 +75,11 @@ class VisualFeatureEncoder(nn.Module):
         b, f, h, w = x.size()
         # print('b, f, h, w\n', x.size())
         x = x.view(b, f*h, w).permute(0, 2, 1)
-        x = F.relu(self.fc(x))
-        # x = self.fc(x)
+        # x = F.relu(self.fc(x))
+        x = self.fc(x)
         x = self.pe(x.permute(1, 0, 2))
-        x = F.relu(self.fc_bar(x))
+        # x = F.relu(self.fc_bar(x))
+        x = self.fc_bar(x)
         # x = self.layer_norm(self.fc_bar(x))
         # x = F.softmax(self.transformer_encoder(x), dim=2)
         x = self.transformer_encoder(x)
