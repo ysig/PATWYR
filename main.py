@@ -44,7 +44,6 @@ class PATWYR(object):
         self.metrics_obj = Metrics()
         self.wandb = wandb
         self.device = torch.device(device)
-        self.save_optimizer = save_optimizer
         self.load_model(checkpoint)
 
     def dataloader(self, purpose, batch_size, num_workers, pin_memory):
