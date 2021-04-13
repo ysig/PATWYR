@@ -180,6 +180,27 @@ class TextTranscriber(nn.Module):
     #         out.append(self.to_text(xp))
     #     return out
 
+# DEBUG
+def load_batch_image():
+    # Each batch should have 
+    return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, 3)], dim=0).unsqueeze(1)
+
+character_dict = dict()
+def get(x):
+    a = character_dict.get(x, None)
+    if a is None:
+        idx = len(character_dict)
+        character_dict[x] = idx
+        return idx
+    else:
+        return a
+
+TXT = ["A|MOVE|to|stop|Mr.|Gaitskell|from", "nominating|any|more|Labour|life|Peers"]
+def load_text_tensor(txt):
+    return torch.LongTensor([ALPHABET[t] for t in load_text(txt)]).unsqueeze(1)
+
+def load_batch_text():
+    return torch.cat([load_text_tensor(TXT[i]) for i in range(2)], dim=1)
 
 if __name__ == "__main__":
     import torchvision
@@ -189,27 +210,6 @@ if __name__ == "__main__":
     import PIL
 
     # load two images
-    def load_batch_image():
-        # Each batch should have 
-        return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, 3)], dim=0).unsqueeze(1)
-
-    character_dict = dict()
-    def get(x):
-        a = character_dict.get(x, None)
-        if a is None:
-            idx = len(character_dict)
-            character_dict[x] = idx
-            return idx
-        else:
-            return a
-
-    TXT = ["A|MOVE|to|stop|Mr.|Gaitskell|from", "nominating|any|more|Labour|life|Peers"]
-    def load_text_tensor(txt):
-        return torch.LongTensor([ALPHABET[t] for t in load_text(txt)]).unsqueeze(1)
-
-    def load_batch_text():
-        return torch.cat([load_text_tensor(TXT[i]) for i in range(2)], dim=1)
-
     vfe = VisualFeatureEncoder(text_len=MAX_LEN)
     tt = TextTranscriber(ALPHABET, text_len=MAX_LEN)
     a = vfe(load_batch_image())

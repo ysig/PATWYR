@@ -5,8 +5,9 @@ from torch.nn import functional as F
 import torchvision
 from tqdm.auto import tqdm, trange
 from metrics import Metrics
-from architecture import VisualFeatureEncoder, TextTranscriber
+from architecture import VisualFeatureEncoder, TextTranscriber, load_image_batch
 from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
+from torchvision import transforms.functional as FTV
 import wandb
 import os
 
@@ -140,7 +141,13 @@ class PATWYR(object):
     def log(self, metrics, step):
         print(metrics)
         if self.wandb:
-            wandb.log(metrics, step=step)
+            metrics_p = metrics.copy()
+            img = load_batch_image()
+            a = self.vfe(img)
+            out = self.tt.gen(a)
+            for i in range(img.size()[0])
+                metrics_p[f'{image}_{i}'] = wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i]))
+            wandb.log(metrics_p, step=step)
 
     def load_model(self, checkpoint):
         vfe = VisualFeatureEncoder(text_len=MAX_LEN)
