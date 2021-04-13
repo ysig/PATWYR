@@ -6,6 +6,7 @@ import math
 from torchvision.models.resnet import Bottleneck
 from dataset import load_image, load_text, ALPHABET, MAX_LEN
 
+
 class ResNetFeatures(nn.Module):
     def __init__(self, pretrained=False):
         super().__init__()
@@ -181,6 +182,12 @@ class TextTranscriber(nn.Module):
     #     return out
 
 # DEBUG
+import os
+import torchvision
+import numpy as np
+from torchvision.transforms.functional import resize, pil_to_tensor
+import PIL
+
 def load_batch_image():
     # Each batch should have 
     return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, 3)], dim=0).unsqueeze(1)
@@ -203,12 +210,6 @@ def load_batch_text():
     return torch.cat([load_text_tensor(TXT[i]) for i in range(2)], dim=1)
 
 if __name__ == "__main__":
-    import torchvision
-    import numpy as np
-    from torchvision.transforms.functional import resize, pil_to_tensor
-    import os
-    import PIL
-
     # load two images
     vfe = VisualFeatureEncoder(text_len=MAX_LEN)
     tt = TextTranscriber(ALPHABET, text_len=MAX_LEN)
