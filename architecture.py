@@ -55,7 +55,7 @@ class VisualFeatureEncoder(nn.Module):
         self.fc_bar = nn.Linear(f, f)
         # self.trans = TransformerDecoder(f)
         # self.fc_hat = nn.Linear(140, text_len)
-        self.layer_norm = nn.LayerNorm(f)
+        # self.layer_norm = nn.LayerNorm(f)
         # self.layer_norm2 = nn.LayerNorm(text_len)
         # self.layer_norm2 = nn.LayerNorm(140)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
@@ -74,13 +74,13 @@ class VisualFeatureEncoder(nn.Module):
         x = F.relu(self.fc(x))
         # x = self.fc(x)
         x = self.pe(x.permute(1, 0, 2))
-        x = self.layer_norm(F.relu(self.fc_bar(x)))
+        x = F.relu(self.fc_bar(x))
         # x = self.layer_norm(self.fc_bar(x))
         # x = F.softmax(self.transformer_encoder(x), dim=2)
         x = self.transformer_encoder(x)
         # x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
         # x = self.layer_norm2(x).permute(2, 1, 0)
-        return self.layer_norm(x)
+        return x#self.layer_norm(x)
 
 
 class PositionalEncoding(nn.Module):
