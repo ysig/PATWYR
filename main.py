@@ -7,7 +7,7 @@ from tqdm.auto import tqdm, trange
 from metrics import Metrics
 from architecture import VisualFeatureEncoder, TextTranscriber, load_image_batch
 from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
-from torchvision import transforms.functional as FTV
+import torchvision.transforms.functional as FTV
 import wandb
 import os
 
