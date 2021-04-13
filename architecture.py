@@ -157,8 +157,9 @@ class TextTranscriber(nn.Module):
 
     @torch.no_grad()
     def gen(self, y):
-        output_tokens = torch.full((y.size()[1], self.text_len), self.alphabet["<P>"]).long().to(y.device)
+        output_tokens = torch.full((y.size()[1], self.text_len), self.alphabet["<P>"]).long()
         output_tokens[:, 0] = self.alphabet["<S>"]
+        output_tokens = output_tokens.to(y.device)
         for j in range(1, self.text_len):
             # xp = output_tokens[:, :j].permute(1, 0)
             x = output_tokens[:, :j].permute(1, 0)
