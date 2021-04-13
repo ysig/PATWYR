@@ -10,6 +10,7 @@ from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
 import torchvision.transforms.functional as FTV
 import wandb
 import os
+from matplotlib import 
 
 class LabelSmoothingLoss(torch.nn.Module):
     def __init__(self, eps, len_A, reduction="mean", weight=None):
@@ -137,18 +138,27 @@ class PATWYR(object):
             ref += self.tt.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
 
-    @torch.no_grad()        
     def log(self, metrics, step):
         print(metrics)
-        if self.wandb:
+        with torch.no_grad():
             img = load_batch_image().to(self.device)
             a = self.vfe(img)
             out = self.tt.gen(a)
-            images = {'image': []}
+            imgs = []
             for i in range(img.size()[0]):
-                images['image'].append(wandb.Image(FTV.to_pil_image(img[i]), caption=str(out[i])))
+                imgs.append((FTV.to_pil_image(img[i]), str(out[i])))
+        fig, axs = plt.subplots(len(imgs), 1)
+        for ax, (img, t) in zip(axs, imgs)
+            ax.imshow(img)
+            ax.set_title(t)
+        fig.tight_layout()
+        plt.show()
+
+        if self.wandb:
             # print('Wandb logging')
             # print(metrics)
+            images = {'images': [wandb.Image(FTV.to_pil_image(x), caption=t) for x, i in imgs]}
+
             wandb.log(metrics, step=step)
             # wandb.log(images, step=step)
 
