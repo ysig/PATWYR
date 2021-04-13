@@ -91,7 +91,6 @@ class PATWYR(object):
         train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
         val_loader = self.dataloader('val', batch_size, num_workers, False)
         if self.wandb:
-            wandb.init(config={"epochs": epochs, "batch_size": batch_size, "lr": lr, "lr_decay": lr_decay, "smoothing_eps": smoothing_eps})
             wandb.watch(self.vfe)
             wandb.watch(self.tt)
         for i in trange(self.epochs, epochs):
@@ -226,7 +225,7 @@ if __name__ == "__main__":
         if args.wandb_project is not None:
             assert args.wandb_entity is not None 
             conf = vars(args)
-            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config=conf)
+            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps})
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
