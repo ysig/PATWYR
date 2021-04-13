@@ -44,6 +44,7 @@ class PATWYR(object):
         self.metrics_obj = Metrics()
         self.wandb = wandb
         self.device = torch.device(device)
+        self.save_optimizer = save_optimizer
         self.load_model(checkpoint)
 
     def dataloader(self, purpose, batch_size, num_workers, pin_memory):
@@ -80,7 +81,7 @@ class PATWYR(object):
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
-    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps):
+    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, save_optimizer=False):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
         self.iam_dataset_init(annotation_txt, image_folder)
@@ -126,7 +127,7 @@ class PATWYR(object):
                     hypo += self.tt.to_text(torch.argmax(b, dim=2))
                     ref += self.tt.to_text(trgt)
             vwer, vcer = self.metrics(hypo, ref)
-            self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i)
+            self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i, save_optimizer)
 
     def test(self, annotation_txt, image_folder):
         test_loader = self.dataloader('test', 1, num_workers, False)
@@ -147,20 +148,29 @@ class PATWYR(object):
         tt = TextTranscriber(self.alphabet, text_len=MAX_LEN)
         optimizer = optim.Adam(list(vfe.parameters()) + list(tt.parameters()), lr=0.001)
         if checkpoint is not None:
-            a, b, c, self.metrics_, self.epochs = torch.load(checkpoint)
-            vfe.load_state_dict(a)
-            tt.load_state_dict(b)
-            optimizer.load_state_dict(c)
+            d = torch.load(checkpoint)
+            self.metrics_ = d['metrics']
+            self.epochs = d['epochs']
+            vfe.load_state_dict(d['vfe'])
+            tt.load_state_dict(d['tt'])
+            if 'optimizer' in d:
+                optimizer.load_state_dict(d['optimizer'])
         else:
             self.metrics_, self.epochs = {}, 0
         self.vfe, self.tt, self.optim = vfe.to(self.device), tt.to(self.device), optimizer
 
-    def checkpoint(self, metrics, checkpoint_dir, step):
+    def save(self, epochs, metrics, save_optimizer, save_pkl):
+        d = {'vfe': self.vfe, 'tt': self.tt, 'metrics': metrics, 'epochs': epochs}
+        if save_optimizer:
+            d['optimizer'] = self.optim
+        torch.save(d, save_pkl)
+
+    def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer):
         self.log(metrics, step)
         if self.metrics_.get('val_cer', 10000) > metrics['val_cer']:
             self.metrics_ = metrics
-            torch.save((self.vfe, self.tt, self.optim, metrics, step), os.path.join(checkpoint_dir, 'best_model.pkl'))
-        torch.save((self.vfe, self.tt, self.optim, metrics, step), os.path.join(checkpoint_dir, 'model.pkl'))
+            self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'best_model.pkl'))
+        self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'model.pkl'))
 
 if __name__ == "__main__":
     import argparse
@@ -187,7 +197,8 @@ if __name__ == "__main__":
     p.add_argument('-c', '--checkpoint-dir', required=True, help='Directory containing dataset')
     p.add_argument('-bs', '--batch-size', default=32, type=int, help='Directory containing dataset')
     p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
-    
+    p.add_argument('--save-optimizer', action='store_true', help='Directory containing dataset')
+
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--annotation-txt', required=True, help='Annotation txt file')
     p.add_argument('-i', '--image-folder', required=True, help='Image Folder')
@@ -212,7 +223,7 @@ if __name__ == "__main__":
             del conf['wandb_entity']
             log_wandb = True
         model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps)
+        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, save_optimizer=bool(args.save_optimizer))
 
     elif args.command == 'test':
         model = PATWYR(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
