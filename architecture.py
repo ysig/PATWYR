@@ -53,10 +53,10 @@ class VisualFeatureEncoder(nn.Module):
         self.pe = PositionalEncoding(f)
         self.fc_bar = nn.Linear(f, f)
         # self.trans = TransformerDecoder(f)
-        self.fc_hat = nn.Linear(140, text_len)
+        # self.fc_hat = nn.Linear(140, text_len)
         self.layer_norm = nn.LayerNorm(f)
         # self.layer_norm2 = nn.LayerNorm(text_len)
-        self.layer_norm2 = nn.LayerNorm(140)
+        # self.layer_norm2 = nn.LayerNorm(140)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
 
@@ -67,8 +67,10 @@ class VisualFeatureEncoder(nn.Module):
         b, f, h, w = x.size()
         x = x.view(b, f*h, w).permute(0, 2, 1).contiguous()
         x = F.relu(self.fc(x))
+        # x = self.fc(x)
         x = self.pe(x.permute(1, 0, 2).contiguous())
         x = self.layer_norm(F.relu(self.fc_bar(x)))
+        # x = self.layer_norm(self.fc_bar(x))
         x = F.softmax(self.transformer_encoder(x), dim=2)
         # x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
         # x = self.layer_norm2(x).permute(2, 1, 0)
@@ -215,7 +217,10 @@ if __name__ == "__main__":
     print(bt.size())
     b = tt(bt[0:tt.text_len, :], a)
     criterion = nn.CrossEntropyLoss()
-    loss = criterion(torch.flatten(b, end_dim=-2), torch.flatten(bt[1:, :]))
+    loss = 0
+    trgt = bt[1:, :]
+    for i in range(trgt.size()[1]):
+        loss += criterion(b[i], trgt[:, i])
     loss.backward()
     out = tt.gen(a)
     print(out)
