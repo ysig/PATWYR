@@ -110,6 +110,7 @@ class TextTranscriber(nn.Module):
         self.inv_alphabet = {j: i for i, j in alphabet.items()}
         self.text_len = text_len
         self.init_weights()
+        self.mask_x = self.generate_square_subsequent_mask(text_len)
 
     def init_weights(self):
         initrange = 0.1
@@ -125,7 +126,8 @@ class TextTranscriber(nn.Module):
     def forward(self, x, y):
         x = self.ebl(x)*math.sqrt(self.f)
         x = self.pe(x)
-        a = self.generate_square_subsequent_mask(x.size()[0]).to(x.device)
+        dim = x.size()[0]
+        a = self.mask_x[:dim, :dim]
         # x = F.softmax(self.transformer_encoder(x, a), dim=2)
         # x = self.transformer_encoder(x, a)
         x = self.transformer_decoder(x, y, a)
@@ -155,11 +157,12 @@ class TextTranscriber(nn.Module):
 
     @torch.no_grad()
     def gen(self, y):
-        output_tokens = (torch.full((y.size()[1], self.text_len)), self.alphabet["<P>"]).long().to(device) # (B, max_length)
+        output_tokens = torch.full((y.size()[1], self.text_len), self.alphabet["<P>"]).long().to(y.device)
         output_tokens[:, 0] = self.alphabet["<S>"]
-        for j in range(self.text_len):
+        for j in range(1, self.text_len):
             # xp = output_tokens[:, :j].permute(1, 0)
-            x = self(output_tokens[:, :j].permute(1, 0), y)
+            x = output_tokens[:, :j].permute(1, 0)
+            x = self.forward(x, y)
             # x = self.ebl(xp)*math.sqrt(self.f)
             # x = self.pe(x)
             # x = F.softmax(self.transformer_encoder(x), dim=2)
@@ -167,7 +170,7 @@ class TextTranscriber(nn.Module):
             # x = self.transformer_decoder(x, y)
             # x = self.linear(x).permute(1, 0, 2)#.contiguous()
             a = torch.argmax(x, dim=-1)
-            output_tokens[:, j] = a[-1:]
+            output_tokens[:, j] = a[:,-1]
             # if xp[-1] == fs:
             #     break
         print(output_tokens)
