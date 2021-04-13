@@ -109,7 +109,7 @@ class PATWYR(object):
                 for i in range(trgt.size()[0]):
                     loss += criterion(b[i], trgt[i])
                 loss.backward()
-                total_loss += loss.item()
+                total_loss += loss.item()/trgt.size()[0]
                 self.optim.step()
                 hypo += self.tt.to_text(torch.argmax(b, dim=2))
                 ref += self.tt.to_text(trgt)
