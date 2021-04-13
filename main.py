@@ -29,7 +29,6 @@ class LabelSmoothingLoss(torch.nn.Module):
 
     def forward(self, preds, target):
         # assert 0 <= self.smoothing < 1
-
         if self.weight is not None:
             self.weight = self.weight.to(preds.device)
 
@@ -148,7 +147,7 @@ class PATWYR(object):
             for i in range(img.size()[0]):
                 imgs.append((FTV.to_pil_image(img[i]), str(out[i])))
         fig, axs = plt.subplots(len(imgs), 1)
-        for ax, (img, t) in zip(axs, imgs)
+        for ax, (img, t) in zip(axs, imgs):
             ax.imshow(img)
             ax.set_title(t)
         fig.tight_layout()
