@@ -142,7 +142,7 @@ class PATWYR(object):
         print(metrics)
         if self.wandb:
             metrics_p = metrics.copy()
-            img = load_batch_image()
+            img = load_batch_image().to(self.device)
             a = self.vfe(img)
             out = self.tt.gen(a)
             for i in range(img.size()[0]):
