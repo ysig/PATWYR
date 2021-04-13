@@ -10,7 +10,7 @@ from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
 import torchvision.transforms.functional as FTV
 import wandb
 import os
-from matplotlib import 
+import matplotlib.pyplot as plt
 
 class LabelSmoothingLoss(torch.nn.Module):
     def __init__(self, eps, len_A, reduction="mean", weight=None):
