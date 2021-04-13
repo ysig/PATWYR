@@ -150,6 +150,8 @@ class PATWYR(object):
         for ax, (img, t) in zip(axs, imgs):
             ax.imshow(img)
             ax.set_title(t)
+            print(t)
+            ax.axis('off')
         fig.tight_layout()
         plt.show()
 
