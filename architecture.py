@@ -100,7 +100,7 @@ class TextTranscriber(nn.Module):
         self.pe = PositionalEncoding(f)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
-        decoder_layer = nn.TransformerDecoderLayer(d_model=f, nhead=num_heads, f, dropout=decoder)
+        decoder_layer = nn.TransformerDecoderLayer(d_model=f, nhead=num_heads, dim_feedforward=f, dropout=dropout)
         self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
         self.linear = nn.Linear(f, dict_size)
         self.alphabet = alphabet
