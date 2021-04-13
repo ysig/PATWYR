@@ -155,21 +155,22 @@ class TextTranscriber(nn.Module):
 
     @torch.no_grad()
     def gen(self, y):
-        init = torch.LongTensor([self.alphabet["<S>"]]).unsqueeze(1).repeat(1, y.size()[1]).to(y.device)
-        xp = torch.clone(init)
+        output_tokens = (torch.full((y.size()[1], self.text_len)), self.alphabet["<P>"]).long().to(device) # (B, max_length)
+        output_tokens[:, 0] = self.alphabet["<S>"]
         for j in range(self.text_len):
+            xp = output_tokens[:, :j].permute(1, 0)
             x = self.ebl(xp)*math.sqrt(self.f)
             x = self.pe(x)
             # x = F.softmax(self.transformer_encoder(x), dim=2)
             # x = self.transformer_encoder(x)
             x = self.transformer_decoder(x, y)
             x = self.linear(x).permute(1, 0, 2)#.contiguous()
-            a = torch.argmax(x, dim=2)
-            xp = torch.cat([init, a.permute(1, 0)], dim=0)
+            a = torch.argmax(x, dim=-1)
+            output_tokens[:, j] = a[-1:]
             # if xp[-1] == fs:
             #     break
-        print(xp)
-        return self.to_text(xp.permute(1, 0))
+        print(output_tokens)
+        return self.to_text(output_tokens)
 
     # cpu-only
     # @torch.no_grad()
