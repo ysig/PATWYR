@@ -93,8 +93,8 @@ class Trainer(object):
                 b = self.model(bt[0:MAX_LEN], img.to(self.device))
                 trgt = bt[1:].permute(1, 0)
                 loss = 0
-                for i in range(trgt.size()[0]):
-                    loss += criterion(b[i], trgt[i])
+                for j in range(trgt.size()[0]):
+                    loss += criterion(b[j], trgt[j])
                 (loss/trgt.size()[0]).backward()
                 self.optim.step()
                 total_loss += loss.detach().item()
@@ -104,7 +104,6 @@ class Trainer(object):
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
             
-            print(i, log_after)
             if i <= log_after:
                 continue
 
@@ -151,7 +150,7 @@ class Trainer(object):
         if self.wandb:
             images = {'images': [wandb.Image(x, caption=t) for x, t in imgs]}
             wandb.log(metrics, step=step)
-            # wandb.log(images, step=step)
+            wandb.log(images, step=step)
 
     def load_model(self, checkpoint):
         model = TransformerHTR(self.alphabet, text_len=MAX_LEN)
