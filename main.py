@@ -103,8 +103,9 @@ class Trainer(object):
                 ref += self.model.to_text(trgt)
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
-            
+
             if i <= log_after:
+                self.log({'train_wer': twer, 'train_cer': tcer}, i)
                 continue
 
             self.model.eval()
