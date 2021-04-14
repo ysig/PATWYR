@@ -68,7 +68,7 @@ class PositionalEncoding(nn.Module):
 
 class TransformerHTR(nn.Module):
     def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
-        super(TextTranscriber, self).__init__()
+        super(TransformerHTR, self).__init__()
         # (Visual Feature) Encoder
         self.resnet = ResNetFeatures()
         self.fc = nn.Linear(f*4, f)
@@ -81,7 +81,7 @@ class TransformerHTR(nn.Module):
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
 
-        # Decoder (Text Transcriber)
+        # (Text Transcriber) Decoder
         self.ebl = nn.Embedding(dict_size, f)
         self.pe_decode = PositionalEncoding(f, text_len, dropout)
         decoder_layer = nn.TransformerDecoderLayer(d_model=f, nhead=num_heads, dim_feedforward=f, dropout=dropout)
@@ -205,17 +205,15 @@ def load_batch_text():
 
 if __name__ == "__main__":
     # load two images
-    vfe = VisualFeatureEncoder(text_len=MAX_LEN)
-    tt = TextTranscriber(ALPHABET, text_len=MAX_LEN)
-    a = vfe(load_batch_image())
+    transformer = TransformerHTR(ALPHABET, text_len=MAX_LEN)
     bt = load_batch_text()
     print(bt.size())
-    b = tt(bt[0:tt.text_len, :], a)
+    b = transformer(bt[0:transformer.text_len, :], load_batch_image())
     criterion = nn.CrossEntropyLoss()
     loss = 0
     trgt = bt[1:, :]
     for i in range(trgt.size()[1]):
         loss += criterion(b[i], trgt[:, i])
     loss.backward()
-    out = tt.gen(a)
+    out = transformer.gen(load_batch_image())
     print(out)
