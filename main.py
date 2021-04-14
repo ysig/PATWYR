@@ -129,7 +129,7 @@ class Trainer(object):
         wer, cer = self.metrics(hypo, ref)
 
     def log(self, metrics, step):
-        print(metrics)
+        print(f"Epoch {step}:\n", metrics)
         with torch.no_grad():
             img = load_batch_image().to(self.device)
             out = self.model.gen(img)
