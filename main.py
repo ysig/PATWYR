@@ -105,16 +105,19 @@ class Trainer(object):
             mean_loss_train = total_loss/dim1
             
             self.model.eval()
-            hypo, ref = [], []
+            hypo, hypo_greedy, ref = [], [], []
             with torch.no_grad():
                 for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
                     bt = txt.squeeze(1).permute(1, 0).to(self.device)
                     b = self.model(bt[0:MAX_LEN], img.to(self.device))
                     trgt = bt[1:].permute(1, 0)
                     hypo += self.model.to_text(torch.argmax(b, dim=2))
+                    hypo_greedy += self.model.gen(img.to(self.device))
                     ref += self.model.to_text(trgt)
             vwer, vcer = self.metrics(hypo, ref)
-            self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i, save_optimizer, no_save)
+            vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
+            metrics = {'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'val_wer_greedy': vwer_greedy, 'val_cer_greedy': vcer_greedy, 'train_loss': mean_loss_train}
+            self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save)
 
     def test(self, annotation_txt, image_folder):
         test_loader = self.dataloader('test', 1, num_workers, False)
