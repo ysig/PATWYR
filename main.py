@@ -71,7 +71,7 @@ class Trainer(object):
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
-    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, save_optimizer=False, no_save=False, log_after=10):
+    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, verbose=False, save_optimizer=False, no_save=False, log_after=10):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
         self.iam_dataset_init(annotation_txt, image_folder)
@@ -87,7 +87,11 @@ class Trainer(object):
             hypo, ref = [], []
             total_loss, dim1 = 0, 0
             self.model.train()
-            for img, txt in tqdm(train_loader, total=len(train_loader), desc='Training'):
+            if verbose:
+                iterator = tqdm(train_loader, total=len(train_loader), desc='Training')
+            else:
+                iterator = train_loader
+            for img, txt in iterator:
                 self.optim.zero_grad()
                 bt = txt.squeeze(1).permute(1, 0).to(self.device)
                 b = self.model(bt[0:MAX_LEN], img.to(self.device))
@@ -106,12 +110,16 @@ class Trainer(object):
 
             self.model.eval()
             if i <= log_after:
-                self.log({'train_wer': twer, 'train_cer': tcer, 'train_loss': mean_loss_train}, i)
+                self.log({'train_wer': twer, 'train_cer': tcer, 'train_loss': mean_loss_train}, i, verbose)
                 continue
 
             hypo, hypo_greedy, ref = [], [], []
             with torch.no_grad():
-                for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
+                if verbose:
+                    iterator = tqdm(val_loader, total=len(val_loader), desc='Validation')
+                else:
+                    iterator = val_loader
+                for img, txt in iterator:
                     bt = txt.squeeze(1).permute(1, 0).to(self.device)
                     b = self.model(bt[0:MAX_LEN], img.to(self.device))
                     trgt = bt[1:].permute(1, 0)
@@ -121,7 +129,7 @@ class Trainer(object):
             vwer, vcer = self.metrics(hypo, ref)
             vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
             metrics = {'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'val_wer_greedy': vwer_greedy, 'val_cer_greedy': vcer_greedy, 'train_loss': mean_loss_train}
-            self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save)
+            self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose)
 
     def test(self, annotation_txt, image_folder):
         test_loader = self.dataloader('test', 1, num_workers, False)
@@ -132,21 +140,23 @@ class Trainer(object):
             ref += self.model.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
 
-    def log(self, metrics, step):
-        print(f"Epoch {step}:\n", metrics)
+    def log(self, metrics, step, verbose):
+        if verbose:
+            print(f"Epoch {step}:\n", metrics)
         with torch.no_grad():
             img = load_batch_image().to(self.device)
             out = self.model.gen(img)
             imgs = []
             for i in range(img.size()[0]):
                 imgs.append((FTV.to_pil_image(img[i]), str(out[i])))
-        fig, axs = plt.subplots(len(imgs), 1)
-        for ax, (img, t) in zip(axs, imgs):
-            ax.imshow(img)
-            ax.set_title(t)
-            ax.axis('off')
-        plt.subplots_adjust(hspace=0)
-        plt.show()
+        if verbose:
+            fig, axs = plt.subplots(len(imgs), 1)
+            for ax, (img, t) in zip(axs, imgs):
+                ax.imshow(img)
+                ax.set_title(t)
+                ax.axis('off')
+            plt.subplots_adjust(hspace=0)
+            plt.show()
 
         if self.wandb:
             images = {'images': [wandb.Image(x, caption=t) for x, t in imgs]}
@@ -173,8 +183,8 @@ class Trainer(object):
             d['optimizer'] = self.optim
         torch.save(d, save_pkl)
 
-    def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save):
-        self.log(metrics, step)
+    def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save, verbose):
+        self.log(metrics, step, verbose)
         if self.metrics_.get('val_cer', 10000) > metrics['val_cer']:
             self.metrics_ = metrics
             if not no_save:
@@ -210,6 +220,7 @@ if __name__ == "__main__":
     p.add_argument('--save-optimizer', action='store_true', help='Directory containing dataset')
     p.add_argument('--log-after', default=10, help='Directory containing dataset')
     p.add_argument('--no-save', action='store_true', help='Directory containing dataset')
+    p.add_argument('--verbose', action='store_true', help='Directory containing dataset')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--annotation-txt', required=True, help='Annotation txt file')
@@ -234,7 +245,7 @@ if __name__ == "__main__":
             del conf['wandb_entity']
             log_wandb = True
         model = Trainer(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
+        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
 
     elif args.command == 'test':
         model = Trainer(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
