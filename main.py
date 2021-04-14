@@ -71,13 +71,15 @@ class Trainer(object):
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
-    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, verbose=False, save_optimizer=False, no_save=False, log_after=10):
+    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, label_smoothing, smoothing_eps, verbose=False, save_optimizer=False, no_save=False, log_after=10):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
         self.iam_dataset_init(annotation_txt, image_folder)
         NA = len(self.alphabet)
-        criterion = LabelSmoothingLoss(smoothing_eps, NA)
-        # criterion = nn.CrossEntropyLoss()
+        if label_smoothing:
+            criterion = LabelSmoothingLoss(smoothing_eps, NA)
+        else:
+            criterion = nn.CrossEntropyLoss()
         train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
         val_loader = self.dataloader('val', batch_size, num_workers, False)
         if self.wandb:
@@ -221,6 +223,7 @@ if __name__ == "__main__":
     p.add_argument('--log-after', default=10, help='Directory containing dataset')
     p.add_argument('--no-save', action='store_true', help='Directory containing dataset')
     p.add_argument('--verbose', action='store_true', help='Directory containing dataset')
+    p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--annotation-txt', required=True, help='Annotation txt file')
@@ -240,12 +243,12 @@ if __name__ == "__main__":
         if args.wandb_project is not None:
             assert args.wandb_entity is not None 
             conf = vars(args)
-            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps})
+            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing)})
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
         model = Trainer(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
+        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
 
     elif args.command == 'test':
         model = Trainer(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
