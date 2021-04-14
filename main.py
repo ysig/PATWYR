@@ -5,7 +5,7 @@ from torch.nn import functional as F
 import torchvision
 from tqdm.auto import tqdm, trange
 from metrics import Metrics
-from architecture import VisualFeatureEncoder, TextTranscriber, load_batch_image
+from architecture import TransformerHTR, load_batch_image
 from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
 import torchvision.transforms.functional as FTV
 import wandb
