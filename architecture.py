@@ -46,47 +46,6 @@ class ResNetFeatures(nn.Module):
         # x = self.fc(x)
         return x
 
-class VisualFeatureEncoder(nn.Module):
-    def __init__(self, f=1024, num_heads=8, num_layers=4, dropout=0.1, text_len=100):
-        super(VisualFeatureEncoder, self).__init__()
-        self.resnet = ResNetFeatures()
-        self.fc = nn.Linear(f*4, f)
-        self.pe = PositionalEncoding(f, 140, dropout)
-        self.fc_bar = nn.Linear(f, f)
-        # self.trans = TransformerDecoder(f)
-        # self.fc_hat = nn.Linear(140, text_len)
-        # self.layer_norm = nn.LayerNorm(f)
-        # self.layer_norm2 = nn.LayerNorm(text_len)
-        # self.layer_norm2 = nn.LayerNorm(140)
-        encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
-
-    def init_weights(self):
-        initrange = 0.1
-        self.fc.bias.data.zero_()
-        self.fc.weight.data.uniform_(-initrange, initrange)
-        self.fc_bar.bias.data.zero_()
-        self.fc_bar.weight.data.uniform_(-initrange, initrange)
-
-    def forward(self, x):
-        # Question: input-size?
-        # print('b, f, h, w\n', x.size())
-        x = self.resnet(x)
-        b, f, h, w = x.size()
-        # print('b, f, h, w\n', x.size())
-        x = x.view(b, f*h, w).permute(0, 2, 1)
-        # x = F.relu(self.fc(x))
-        x = self.fc(x)
-        x = self.pe(x.permute(1, 0, 2))
-        # x = F.relu(self.fc_bar(x))
-        x = self.fc_bar(x)
-        # x = self.layer_norm(self.fc_bar(x))
-        # x = F.softmax(self.transformer_encoder(x), dim=2)
-        x = self.transformer_encoder(x)
-        # x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
-        # x = self.layer_norm2(x).permute(2, 1, 0)
-        return x#self.layer_norm(x)
-
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len, dropout=0.1):
@@ -101,28 +60,47 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
+        print(x.size())
+        print(self.pe.size())
         x = x + self.pe[:x.size(0), :]
         return self.dropout(x)
 
 
-class TextTranscriber(nn.Module):
+class TransformerHTR(nn.Module):
     def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
         super(TextTranscriber, self).__init__()
+        # (Visual Feature) Encoder
+        self.resnet = ResNetFeatures()
+        self.fc = nn.Linear(f*4, f)
+        self.pe_encode = PositionalEncoding(f, 140, dropout)
+        self.fc_bar = nn.Linear(f, f)
+        # self.fc_hat = nn.Linear(140, text_len)
+        # self.layer_norm = nn.LayerNorm(f)
+        # self.layer_norm2 = nn.LayerNorm(text_len)
+        # self.layer_norm2 = nn.LayerNorm(140)
+        encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
+
+        # Decoder (Text Transcriber)
         self.ebl = nn.Embedding(dict_size, f)
-        self.pe = PositionalEncoding(f, text_len, dropout)
-        # encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
-        # self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
+        self.pe_decode = PositionalEncoding(f, text_len, dropout)
         decoder_layer = nn.TransformerDecoderLayer(d_model=f, nhead=num_heads, dim_feedforward=f, dropout=dropout)
         self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
         self.linear = nn.Linear(f, dict_size)
-        self.alphabet = alphabet
+
+        # General
         self.f = f
-        self.inv_alphabet = {j: i for i, j in alphabet.items()}
         self.text_len = text_len
+        self.alphabet = alphabet
+        self.inv_alphabet = {j: i for i, j in alphabet.items()}
         self.init_weights()
 
     def init_weights(self):
         initrange = 0.1
+        self.fc.bias.data.zero_()
+        self.fc.weight.data.uniform_(-initrange, initrange)
+        self.fc_bar.bias.data.zero_()
+        self.fc_bar.weight.data.uniform_(-initrange, initrange)
         self.ebl.weight.data.uniform_(-initrange, initrange)
         self.linear.bias.data.zero_()
         self.linear.weight.data.uniform_(-initrange, initrange)
@@ -132,16 +110,34 @@ class TextTranscriber(nn.Module):
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
 
-    def forward(self, x, y):
+    def encode(self, x):
+        # Question: input-size?
+        # print('b, f, h, w\n', x.size())
+        x = self.resnet(x)
+        b, f, h, w = x.size()
+        x = x.view(b, f*h, w).permute(0, 2, 1)
+        # x = F.relu(self.fc(x))
+        x = self.fc(x)
+        x = self.pe_encode(x.permute(1, 0, 2))
+        # x = F.relu(self.fc_bar(x))
+        x = self.fc_bar(x)
+        # x = self.layer_norm(self.fc_bar(x))
+        # x = F.softmax(self.transformer_encoder(x), dim=2)
+        x = self.transformer_encoder(x)
+        # x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
+        # x = self.layer_norm2(x).permute(2, 1, 0)
+        return x#self.layer_norm(x)
+
+    def decode(self, x, y):
         x = self.ebl(x)*math.sqrt(self.f)
-        x = self.pe(x)
+        x = self.pe_decode(x)
         dim = x.size()[0]
         a = self.generate_square_subsequent_mask(dim).to(x.device)
-        # x = F.softmax(self.transformer_encoder(x, a), dim=2)
-        # x = self.transformer_encoder(x, a)
         x = self.transformer_decoder(x, y, a)
-        # print(x.size())
-        return self.linear(x).permute(1, 0, 2)#.contiguous()
+        return self.linear(x).permute(1, 0, 2)
+
+    def forward(self, x, y):
+        return self.decode(x, self.encode(y))
 
     @torch.no_grad()
     def to_text_(self, x):
@@ -166,46 +162,18 @@ class TextTranscriber(nn.Module):
 
     @torch.no_grad()
     def gen(self, y):
+        y = self.encode(y)
         output_tokens = torch.full((y.size()[1], self.text_len), self.alphabet["<P>"]).long()
         output_tokens[:, 0] = self.alphabet["<S>"]
         output_tokens = output_tokens.to(y.device)
         for j in range(1, self.text_len):
-            # xp = output_tokens[:, :j].permute(1, 0)
             x = output_tokens[:, :j].permute(1, 0)
-            x = self.forward(x, y)
-            # x = self.ebl(xp)*math.sqrt(self.f)
-            # x = self.pe(x)
-            # x = F.softmax(self.transformer_encoder(x), dim=2)
-            # x = self.transformer_encoder(x)
-            # x = self.transformer_decoder(x, y)
-            # x = self.linear(x).permute(1, 0, 2)#.contiguous()
+            x = self.decode(x, y)
             a = torch.argmax(x, dim=-1)
             output_tokens[:, j] = a[:,-1]
-            # if xp[-1] == fs:
-            #     break
-        print(output_tokens)
+        # print(output_tokens)
         return self.to_text(output_tokens)
 
-    # cpu-only
-    # @torch.no_grad()
-    # def gen(self, y):
-    #     out = []
-    #     fs = self.alphabet["<E>"]
-    #     for i in range(y.size()[1]):
-    #         img = y[:,i].unsqueeze(1)
-    #         xp = torch.LongTensor([self.alphabet["<S>"]]).to(y.device)
-    #         for j in range(self.text_len):
-    #             x = self.ebl(xp)
-    #             x = self.pe(x)
-    #             x = F.softmax(self.transformer_encoder(x), dim=2)
-    #             x = self.transformer_decoder(img[:j+1, :, :], x)
-    #             x = self.linear(x).permute(1, 0, 2).contiguous()
-    #             a = torch.argmax(x, keepdim=True, dim=2).squeeze(2).squeeze(0)
-    #             xp = torch.cat([torch.LongTensor([self.alphabet["<S>"]]).to(a.device), a], dim=0)
-    #             if xp[-1] == fs:
-    #                 break
-    #         out.append(self.to_text(xp))
-    #     return out
 
 # DEBUG
 import os

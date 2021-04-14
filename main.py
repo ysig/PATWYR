@@ -38,9 +38,8 @@ class LabelSmoothingLoss(torch.nn.Module):
         nll = F.nll_loss(log_preds, target, reduction=self.reduction, weight=self.weight)
         return self.linear_combination(loss / n, nll)
 
-class PATWYR(object):
+class Trainer(object):
     def __init__(self, checkpoint=None, lr=0.0002, device="cpu", wandb=False):
-        # self.device
         self.alphabet = ALPHABET
         self.metrics_obj = Metrics()
         self.wandb = wandb
@@ -99,8 +98,8 @@ class PATWYR(object):
             self.train_()
             for img, txt in tqdm(train_loader, total=len(train_loader), desc='Training'):
                 self.optim.zero_grad()
-                a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
-                b = self.tt(bt[0:MAX_LEN], a)
+                bt = txt.squeeze(1).permute(1, 0).to(self.device)
+                b = self.model(bt[0:MAX_LEN], img.to(self.device))
                 trgt = bt[1:].permute(1, 0)
                 loss = 0
                 for i in range(trgt.size()[0]):
@@ -109,8 +108,8 @@ class PATWYR(object):
                 self.optim.step()
                 total_loss += loss.detach().item()
                 dim1 += trgt.size()[0]
-                hypo += self.tt.to_text(torch.argmax(b, dim=2))
-                ref += self.tt.to_text(trgt)
+                hypo += self.model.to_text(torch.argmax(b, dim=2))
+                ref += self.model.to_text(trgt)
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
             
@@ -118,11 +117,11 @@ class PATWYR(object):
             hypo, ref = [], []
             with torch.no_grad():
                 for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
-                    a, bt = self.vfe(img.to(self.device)), txt.squeeze(1).permute(1, 0).to(self.device)
-                    b = self.tt(bt[0:MAX_LEN], a)
+                    bt = txt.squeeze(1).permute(1, 0).to(self.device)
+                    b = self.model(bt[0:MAX_LEN], img.to(self.device))
                     trgt = bt[1:].permute(1, 0)
-                    hypo += self.tt.to_text(torch.argmax(b, dim=2))
-                    ref += self.tt.to_text(trgt)
+                    hypo += self.model.to_text(torch.argmax(b, dim=2))
+                    ref += self.model.to_text(trgt)
             vwer, vcer = self.metrics(hypo, ref)
             self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i, save_optimizer)
 
@@ -131,16 +130,15 @@ class PATWYR(object):
         self.eval_()
         hypo, ref = [], []
         for img, txt in val_loader:
-            hypo += self.tt.gen(self.vfe(img.to(self.device)))
-            ref += self.tt.to_text(txt.squeeze(1))
+            hypo += self.model.gen(img.to(self.device))
+            ref += self.model.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
 
     def log(self, metrics, step):
         print(metrics)
         with torch.no_grad():
             img = load_batch_image().to(self.device)
-            x = self.vfe(img)
-            out = self.tt.gen(x)
+            out = self.model.gen(img)
             imgs = []
             for i in range(img.size()[0]):
                 imgs.append((FTV.to_pil_image(img[i]), str(out[i])))
@@ -161,23 +159,21 @@ class PATWYR(object):
             # wandb.log(images, step=step)
 
     def load_model(self, checkpoint):
-        vfe = VisualFeatureEncoder(text_len=MAX_LEN)
-        tt = TextTranscriber(self.alphabet, text_len=MAX_LEN)
-        optimizer = optim.Adam(list(vfe.parameters()) + list(tt.parameters()), lr=0.001)
+        model = TransformerHTR(self.alphabet, text_len=MAX_LEN)
+        optimizer = optim.Adam(list(model.parameters()), lr=0.001)
         if checkpoint is not None:
             d = torch.load(checkpoint)
             self.metrics_ = d['metrics']
             self.epochs = d['epochs']
-            vfe.load_state_dict(d['vfe'])
-            tt.load_state_dict(d['tt'])
+            model.load_state_dict(d['model'])
             if 'optimizer' in d:
                 optimizer.load_state_dict(d['optimizer'])
         else:
             self.metrics_, self.epochs = {}, 0
-        self.vfe, self.tt, self.optim = vfe.to(self.device), tt.to(self.device), optimizer
+        self.model, self.optim = model.to(self.device), optimizer
 
     def save(self, epochs, metrics, save_optimizer, save_pkl):
-        d = {'vfe': self.vfe, 'tt': self.tt, 'metrics': metrics, 'epochs': epochs}
+        d = {'model': self.model, 'metrics': metrics, 'epochs': epochs}
         if save_optimizer:
             d['optimizer'] = self.optim
         torch.save(d, save_pkl)
@@ -238,12 +234,12 @@ if __name__ == "__main__":
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
-        model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
+        model = Trainer(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
         model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, save_optimizer=bool(args.save_optimizer))
 
     elif args.command == 'test':
-        model = PATWYR(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
+        model = Trainer(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
         model.test(args.iam_annotation_txt, args.iam_image_folder)
 
     elif args.command == 'gen':
-        model = PATWYR(checkpoint=args.resume_checkpoint, device=args.device)
+        model = Trainer(checkpoint=args.resume_checkpoint, device=args.device)
