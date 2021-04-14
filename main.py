@@ -145,7 +145,7 @@ class Trainer(object):
             ax.imshow(img)
             ax.set_title(t)
             ax.axis('off')
-        # fig.tight_layout()
+        plt.subplots_adjust(hspace=0)
         plt.show()
 
         if self.wandb:
