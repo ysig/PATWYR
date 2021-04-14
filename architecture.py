@@ -24,26 +24,11 @@ class ResNetFeatures(nn.Module):
         # From https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
         x = self.resnet.conv1(x.repeat(1, 3, 1, 1))
         x = self.resnet.bn1(x)
-        # print(x.size())
         x = self.resnet.relu(x)
-        # print(x.size())
         x = self.resnet.maxpool(x)
-        # print(x.size())
         x = self.resnet.layer1(x)
-        # print(x.size())
         x = self.resnet.layer2(x)
-        # print(x.size())
         x = self.resnet.layer3(x)
-        # print(x.size())
-        # print(self.resnet.layer3)
-        # print(self.resnet.layer4(x).size())
-        # x = self.layer3(x)
-        # x = self.layer4(x)
-        # print(x.size())
-        
-        # x = self.avgpool(x)
-        # x = torch.flatten(x, 1)
-        # x = self.fc(x)
         return x
 
 
@@ -72,10 +57,6 @@ class TransformerHTR(nn.Module):
         self.fc = nn.Linear(f*4, f)
         self.pe_encode = PositionalEncoding(f, 140, dropout)
         self.fc_bar = nn.Linear(f, f)
-        # self.fc_hat = nn.Linear(140, text_len)
-        # self.layer_norm = nn.LayerNorm(f)
-        # self.layer_norm2 = nn.LayerNorm(text_len)
-        # self.layer_norm2 = nn.LayerNorm(140)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
 
@@ -109,22 +90,14 @@ class TransformerHTR(nn.Module):
         return mask
 
     def encode(self, x):
-        # Question: input-size?
-        # print('b, f, h, w\n', x.size())
         x = self.resnet(x)
         b, f, h, w = x.size()
         x = x.view(b, f*h, w).permute(0, 2, 1)
         x = F.relu(self.fc(x))
-        # x = self.fc(x)
         x = self.pe_encode(x.permute(1, 0, 2))
         x = F.relu(self.fc_bar(x))
-        # x = self.fc_bar(x)
-        # x = self.layer_norm(self.fc_bar(x))
-        # x = F.softmax(self.transformer_encoder(x), dim=2)
         x = self.transformer_encoder(x)
-        # x = F.relu(self.fc_hat(x.permute(2, 1, 0)))
-        # x = self.layer_norm2(x).permute(2, 1, 0)
-        return x#self.layer_norm(x)
+        return x
 
     def decode(self, x, y):
         x = self.ebl(x)*math.sqrt(self.f)
@@ -169,7 +142,6 @@ class TransformerHTR(nn.Module):
             x = self.decode(x, y)
             a = torch.argmax(x, dim=-1)
             output_tokens[:, j] = a[:,-1]
-        # print(output_tokens)
         return self.to_text(output_tokens)
 
 
