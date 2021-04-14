@@ -140,14 +140,11 @@ class Trainer(object):
         for ax, (img, t) in zip(axs, imgs):
             ax.imshow(img)
             ax.set_title(t)
-            # print(t)
             ax.axis('off')
-        fig.tight_layout()
+        # fig.tight_layout()
         plt.show()
 
         if self.wandb:
-            # print('Wandb logging')
-            # print(metrics)
             images = {'images': [wandb.Image(x, caption=t) for x, t in imgs]}
             wandb.log(metrics, step=step)
             # wandb.log(images, step=step)
