@@ -71,7 +71,7 @@ class Trainer(object):
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
-    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, save_optimizer=False):
+    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, save_optimizer=False, no_save=False):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
         self.iam_dataset_init(annotation_txt, image_folder)
@@ -114,7 +114,7 @@ class Trainer(object):
                     hypo += self.model.to_text(torch.argmax(b, dim=2))
                     ref += self.model.to_text(trgt)
             vwer, vcer = self.metrics(hypo, ref)
-            self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i, save_optimizer)
+            self.checkpoint({'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'train_loss': mean_loss_train}, checkpoint_dir, i, save_optimizer, no_save)
 
     def test(self, annotation_txt, image_folder):
         test_loader = self.dataloader('test', 1, num_workers, False)
@@ -169,12 +169,14 @@ class Trainer(object):
             d['optimizer'] = self.optim
         torch.save(d, save_pkl)
 
-    def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer):
+    def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save):
         self.log(metrics, step)
         if self.metrics_.get('val_cer', 10000) > metrics['val_cer']:
             self.metrics_ = metrics
-            self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'best_model.pkl'))
-        self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'model.pkl'))
+            if not no_save:
+                self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'best_model.pkl'))
+        if not no_save:
+            self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'model.pkl'))
 
 if __name__ == "__main__":
     import argparse
@@ -202,6 +204,7 @@ if __name__ == "__main__":
     p.add_argument('-bs', '--batch-size', default=32, type=int, help='Directory containing dataset')
     p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
     p.add_argument('--save-optimizer', action='store_true', help='Directory containing dataset')
+    p.add_argument('--no-save', action='store_true', help='Directory containing dataset')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--annotation-txt', required=True, help='Annotation txt file')
@@ -226,7 +229,7 @@ if __name__ == "__main__":
             del conf['wandb_entity']
             log_wandb = True
         model = Trainer(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, save_optimizer=bool(args.save_optimizer))
+        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save))
 
     elif args.command == 'test':
         model = Trainer(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
