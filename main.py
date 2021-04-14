@@ -71,7 +71,7 @@ class Trainer(object):
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
-    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, save_optimizer=False, no_save=False):
+    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, smoothing_eps, save_optimizer=False, no_save=False, log_after=10):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
         self.iam_dataset_init(annotation_txt, image_folder)
@@ -104,20 +104,21 @@ class Trainer(object):
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
             
-            self.model.eval()
-            hypo, hypo_greedy, ref = [], [], []
-            with torch.no_grad():
-                for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
-                    bt = txt.squeeze(1).permute(1, 0).to(self.device)
-                    b = self.model(bt[0:MAX_LEN], img.to(self.device))
-                    trgt = bt[1:].permute(1, 0)
-                    hypo += self.model.to_text(torch.argmax(b, dim=2))
-                    hypo_greedy += self.model.gen(img.to(self.device))
-                    ref += self.model.to_text(trgt)
-            vwer, vcer = self.metrics(hypo, ref)
-            vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
-            metrics = {'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'val_wer_greedy': vwer_greedy, 'val_cer_greedy': vcer_greedy, 'train_loss': mean_loss_train}
-            self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save)
+            if i > log_after:
+                self.model.eval()
+                hypo, hypo_greedy, ref = [], [], []
+                with torch.no_grad():
+                    for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
+                        bt = txt.squeeze(1).permute(1, 0).to(self.device)
+                        b = self.model(bt[0:MAX_LEN], img.to(self.device))
+                        trgt = bt[1:].permute(1, 0)
+                        hypo += self.model.to_text(torch.argmax(b, dim=2))
+                        hypo_greedy += self.model.gen(img.to(self.device))
+                        ref += self.model.to_text(trgt)
+                vwer, vcer = self.metrics(hypo, ref)
+                vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
+                metrics = {'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'val_wer_greedy': vwer_greedy, 'val_cer_greedy': vcer_greedy, 'train_loss': mean_loss_train}
+                self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save)
 
     def test(self, annotation_txt, image_folder):
         test_loader = self.dataloader('test', 1, num_workers, False)
@@ -204,6 +205,7 @@ if __name__ == "__main__":
     p.add_argument('-bs', '--batch-size', default=32, type=int, help='Directory containing dataset')
     p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
     p.add_argument('--save-optimizer', action='store_true', help='Directory containing dataset')
+    p.add_argument('--log-after', default=10, help='Directory containing dataset')
     p.add_argument('--no-save', action='store_true', help='Directory containing dataset')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
@@ -229,7 +231,7 @@ if __name__ == "__main__":
             del conf['wandb_entity']
             log_wandb = True
         model = Trainer(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save))
+        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), args.smoothing_eps, save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), int(args.log_after))
 
     elif args.command == 'test':
         model = Trainer(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
