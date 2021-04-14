@@ -89,8 +89,7 @@ class Trainer(object):
         train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
         val_loader = self.dataloader('val', batch_size, num_workers, False)
         if self.wandb:
-            wandb.watch(self.vfe)
-            wandb.watch(self.tt)
+            wandb.watch(self.model)
         for i in trange(self.epochs, epochs):
             self.adjust_learning_rate(i, lr, lr_decay)
             hypo, ref = [], []
