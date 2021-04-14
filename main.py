@@ -64,14 +64,6 @@ class Trainer(object):
         wer, cer = self.metrics_obj.wer(hypo, ref), self.metrics_obj.cer(hypo, ref)
         return wer, cer
 
-    def train_(self):
-        self.vfe.train()
-        self.tt.train()
-
-    def eval_(self):
-        self.vfe.eval()
-        self.tt.eval()
-
     def adjust_learning_rate(self, epoch, lr, lr_decay):
         """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
         lr = lr * (0.5 ** (epoch // lr_decay))
@@ -94,7 +86,7 @@ class Trainer(object):
             self.adjust_learning_rate(i, lr, lr_decay)
             hypo, ref = [], []
             total_loss, dim1 = 0, 0
-            self.train_()
+            self.model.train()
             for img, txt in tqdm(train_loader, total=len(train_loader), desc='Training'):
                 self.optim.zero_grad()
                 bt = txt.squeeze(1).permute(1, 0).to(self.device)
@@ -112,7 +104,7 @@ class Trainer(object):
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
             
-            self.eval_()
+            self.model.eval()
             hypo, ref = [], []
             with torch.no_grad():
                 for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
