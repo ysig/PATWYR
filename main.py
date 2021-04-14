@@ -104,11 +104,11 @@ class Trainer(object):
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
 
+            self.model.eval()
             if i <= log_after:
                 self.log({'train_wer': twer, 'train_cer': tcer}, i)
                 continue
 
-            self.model.eval()
             hypo, hypo_greedy, ref = [], [], []
             with torch.no_grad():
                 for img, txt in tqdm(val_loader, total=len(val_loader), desc='Validation'):
