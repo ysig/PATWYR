@@ -106,7 +106,7 @@ class Trainer(object):
 
             self.model.eval()
             if i <= log_after:
-                self.log({'train_wer': twer, 'train_cer': tcer}, i)
+                self.log({'train_wer': twer, 'train_cer': tcer, 'train_loss': mean_loss_train}, i)
                 continue
 
             hypo, hypo_greedy, ref = [], [], []
