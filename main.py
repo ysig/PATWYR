@@ -4,7 +4,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 import torchvision
 from tqdm.auto import tqdm, trange
-from metrics import Metrics
+from metrics import ocr_metrics
 from architecture import TransformerHTR, load_batch_image
 from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
 import torchvision.transforms.functional as FTV
@@ -35,10 +35,10 @@ class LabelSmoothingLoss(nn.Module):
         return torch.mean(torch.sum(-true_dist * pred, dim=self.dim))
 
 
-class Trainer(object):
+class Engine(object):
     def __init__(self, checkpoint=None, lr=0.0002, device="cpu", wandb=False):
         self.alphabet = ALPHABET
-        self.metrics_obj = Metrics()
+        # self.metrics_obj = Metrics()
         self.wandb = wandb
         self.device = torch.device(device)
         self.load_model(checkpoint)
@@ -57,9 +57,8 @@ class Trainer(object):
             self.iam_dataset = IAM(annotation_txt, image_folder, self.alphabet)
 
     def metrics(self, hypo, ref):
-        # Corpus-Level WER: 40.0
-        wer, cer = self.metrics_obj.wer(hypo, ref), self.metrics_obj.cer(hypo, ref)
-        return wer, cer
+        # wer, cer = self.metrics_obj.wer(hypo, ref), self.metrics_obj.cer(hypo, ref)
+        return ocr_metrics(hypo, ref)
 
     def adjust_learning_rate(self, epoch, lr, lr_decay):
         """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
@@ -244,12 +243,12 @@ if __name__ == "__main__":
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
-        model = Trainer(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        model.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
+        engine = Engine(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
+        engine.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
 
     elif args.command == 'test':
-        model = Trainer(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
-        model.test(args.iam_annotation_txt, args.iam_image_folder)
+        engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
+        engine.test(args.iam_annotation_txt, args.iam_image_folder)
 
     elif args.command == 'gen':
-        model = Trainer(checkpoint=args.resume_checkpoint, device=args.device)
+        engine = Engine(checkpoint=args.resume_checkpoint, device=args.device)

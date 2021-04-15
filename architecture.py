@@ -100,11 +100,12 @@ class TransformerHTR(nn.Module):
         return x
 
     def decode(self, x, y):
+        kpm = (x == self.alphabet['<P>']).transpose(1, 0)
         x = self.ebl(x)*math.sqrt(self.f)
         x = self.pe_decode(x)
         dim = x.size()[0]
         a = self.generate_square_subsequent_mask(dim).to(x.device)
-        x = self.transformer_decoder(x, y, a)
+        x = self.transformer_decoder(x, y, a, tgt_key_padding_mask=kpm)
         return self.linear(x).permute(1, 0, 2)
 
     def forward(self, x, y):
