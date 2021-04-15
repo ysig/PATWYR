@@ -40,7 +40,6 @@ class Metrics(object):
 
         self.wer_transform = tr.Compose(
             [
-                SentencesToListOfCharacters(),
                 tr.RemoveMultipleSpaces(),
                 tr.Strip(),
             ]
