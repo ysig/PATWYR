@@ -11,32 +11,29 @@ import torchvision.transforms.functional as FTV
 import wandb
 import os
 import matplotlib.pyplot as plt
+from torch.autograd import Variable
+from torch.nn.modules.loss import _WeightedLoss
 
-class LabelSmoothingLoss(torch.nn.Module):
-    def __init__(self, eps, len_A, reduction="mean", weight=None):
+
+class LabelSmoothingLoss(nn.Module):
+    def __init__(self, eps, len_A, dim=-1):
+        """if smoothing == 0, it's one-hot method
+           if 0 < smoothing < 1, it's smooth method
+        """
         super(LabelSmoothingLoss, self).__init__()
-        self.smoothing_a = float(eps/len_A)
-        self.smoothing_b = float(1 - ((len_A - 1)*eps/len_A))
-        self.reduction = reduction
-        self.weight    = weight
+        self.confidence = float(1 - ((len_A - 1)*eps/len_A))
+        self.smoothing = float(eps/len_A)
+        assert 0 <= self.smoothing < 1
+        self.dim = dim
 
-    def reduce_loss(self, loss):
-        return loss.mean() if self.reduction == 'mean' else loss.sum() \
-         if self.reduction == 'sum' else loss
+    def forward(self, pred, target):
+        pred = pred.log_softmax(dim=self.dim)
 
-    def linear_combination(self, x, y):
-        return self.smoothing_a * x + self.smoothing_b * y
+        with torch.no_grad():
+            true_dist = torch.full_like(pred, self.smoothing)
+            true_dist.scatter_(1, target.data.unsqueeze(1), self.confidence)
+        return torch.mean(torch.sum(-true_dist * pred, dim=self.dim))
 
-    def forward(self, preds, target):
-        # assert 0 <= self.smoothing < 1
-        if self.weight is not None:
-            self.weight = self.weight.to(preds.device)
-
-        n = preds.size(-1)
-        log_preds = F.log_softmax(preds, dim=-1)
-        loss = self.reduce_loss(-log_preds.sum(dim=-1))
-        nll = F.nll_loss(log_preds, target, reduction=self.reduction, weight=self.weight)
-        return self.linear_combination(loss / n, nll)
 
 class Trainer(object):
     def __init__(self, checkpoint=None, lr=0.0002, device="cpu", wandb=False):
