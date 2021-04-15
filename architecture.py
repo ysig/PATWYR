@@ -152,9 +152,9 @@ import numpy as np
 from torchvision.transforms.functional import resize, pil_to_tensor
 import PIL
 
-def load_batch_image():
+def load_batch_image(max_img=2):
     # Each batch should have 
-    return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, 3)], dim=0).unsqueeze(1)
+    return torch.cat([load_image(os.path.join('debug-data', f"{i}.png")) for i in range(1, max_img+1)], dim=0).unsqueeze(1)
 
 character_dict = dict()
 def get(x):

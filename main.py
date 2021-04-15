@@ -143,7 +143,7 @@ class Trainer(object):
         if verbose:
             print(f"Epoch {step}:\n", metrics)
         with torch.no_grad():
-            img = load_batch_image().to(self.device)
+            img = load_batch_image(4).to(self.device)
             out = self.model.gen(img)
             imgs = []
             for i in range(img.size()[0]):
