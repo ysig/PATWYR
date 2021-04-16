@@ -63,7 +63,16 @@ class IAM(Dataset):
         txt = torch.LongTensor([self.alphabet[t] for t in load_text(txt)]).unsqueeze(0)
         return img, txt
 
-def iam_dataloader(dataset, batch_size, num_workers, pin_memory, subset_indices=None):
+def synthetic_make_date(image_folder):
+    return [(f, str(os.path.splitext(f)[0].split('_')[0]).replace(" ", "|")) for f in os.listdir(image_folder)]
+
+class Sythetic(IAM):
+    def __init__(self, image_folder):
+        self.data = read_lines_text(annotation_txt)
+        self.image_folder = image_folder
+        self.alphabet = alphabet
+
+def make_dataloader(dataset, batch_size, num_workers, pin_memory, subset_indices=None):
     if subset_indices is not None:
         dataset = Subset(dataset, subset_indices)
     return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)

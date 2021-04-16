@@ -42,18 +42,36 @@ class Engine(object):
         self.device = torch.device(device)
         self.load_model(checkpoint)
 
-    def dataloader(self, purpose, batch_size, num_workers, pin_memory):
-        if purpose == 'train':
-            indices = range(6482)
-        elif purpose == 'val':
-            indices = range(6482, 6482 + 976)
+    def dataloader(self, dataset_type, purpose, batch_size, num_workers, pin_memory):
+        if dataset_type == "IAM":
+            if purpose == 'train':
+                indices = range(6482)
+            elif purpose == 'val':
+                indices = range(6482, 6482 + 976)
+            else:
+                indices = range(6482 + 976, 6482 + 976 + 2914)
+            return make_dataloader(self.iam_dataset, batch_size, num_workers, pin_memory, indices)
+        elif dataset_type == "Synthetic":
+            synthetic_dataset = self.synthetic_dataset
+            if purpose == 'train':
+                indices = range(int(0.8*len(synthetic_dataset)))
+            else:
+                indices = range(int(0.8*len(synthetic_dataset)), len(synthetic_dataset))
+            return make_dataloader(synthetic_dataset, batch_size, num_workers, pin_memory, indices)
         else:
-            indices = range(6482 + 976, 6482 + 976 + 2914)
-        return iam_dataloader(self.iam_dataset, batch_size, num_workers, pin_memory, indices)
+            return ValueError("Unrecognized Dataset")
 
-    def iam_dataset_init(self, annotation_txt, image_folder):
-        if not hasattr(self, 'iam_dataset'):
-            self.iam_dataset = IAM(annotation_txt, image_folder, self.alphabet)
+    def dataset_init(self, dataset):
+        if dataset[0] == "IAM":
+            annotation_txt, image_folder = dataset[1]
+            if not hasattr(self, 'iam_dataset'):
+                self.iam_dataset = IAM(annotation_txt, image_folder, self.alphabet)
+        
+        elif dataset[0] == "Synthetic":
+            if not hasattr(self, 'synthetic_dataset'):
+                self.synthetic_dataset = Sythetic(dataset[1], self.alphabet)
+        else:
+            raise ValueError("Unrecognized Dataset")
 
     def metrics(self, hypo, ref):
         # wer, cer = self.metrics_obj.wer(hypo, ref), self.metrics_obj.cer(hypo, ref)
@@ -61,7 +79,8 @@ class Engine(object):
 
     def adjust_learning_rate(self, epoch, lr, lr_decay):
         """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-        lr = lr * (0.5 ** (epoch // lr_decay))
+        if lr_decay is not None:
+            lr = lr * (0.5 ** (epoch // lr_decay))
         # print('epoch:',epoch,'lr:',lr)
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
@@ -72,17 +91,19 @@ class Engine(object):
             loss += criterion(b[j], trgt[j])
         return loss, trgt.size()[0]
 
-    def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, label_smoothing, smoothing_eps, verbose=False, save_optimizer=False, no_save=False, log_after=10):
+    def train(self, checkpoint_dir, dataset, epochs=60, lr=0.0001, lr_decay=None, batch_size=32, num_workers=1, pin_memory=False, label_smoothing=True, smoothing_eps=0.4, verbose=False, save_optimizer=False, no_save=False, log_after=10):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
-        self.iam_dataset_init(annotation_txt, image_folder)
+
+        train_loader = self.dataloader(dataset[0], 'train', batch_size, num_workers, pin_memory)
+        val_loader = self.dataloader(dataset[0], 'val', batch_size, num_workers, False)
+
         NA = len(self.alphabet)
         if label_smoothing:
             criterion = LabelSmoothingLoss(smoothing_eps, NA)
         else:
             criterion = nn.CrossEntropyLoss()
-        train_loader = self.dataloader('train', batch_size, num_workers, pin_memory)
-        val_loader = self.dataloader('val', batch_size, num_workers, False)
+
         if self.wandb:
             wandb.watch(self.model)
         for i in trange(self.epochs, epochs):
@@ -211,6 +232,25 @@ if __name__ == "__main__":
         epilog = 'Example: %s %s' % ("main.py", example) if example is not None else None
         return subparsers.add_parser(cmd, description=desc, help=desc, epilog=epilog)
 
+    p = add_command('pretrain', 'main.py', 'train -a ascii/lines.txt -i ')
+    p.add_argument('--synthetic-data', required=True, help='Image Folder')
+    p.add_argument('--lr', default=0.0002, type=float, help='Directory containing dataset')
+    p.add_argument('--lr_decay', default=None, type=int, help='Directory containing dataset')
+    p.add_argument('--epochs', default=60, type=int, help='Directory containing dataset')
+    p.add_argument('-d', '--device', default='cuda', help='Directory containing dataset')
+    p.add_argument('-wp', '--wandb-project', type=str, default=None, help='Wandb-ID')
+    p.add_argument('-we', '--wandb-entity', type=str, default=None, help='Wandb-ID')
+    p.add_argument('-r', '--resume-checkpoint', default=None, help='Directory containing dataset')
+    p.add_argument('-w', '--num_workers', type=int, default=4)
+    p.add_argument('-se', '--smoothing_eps', type=float, default=0.4)
+    p.add_argument('-c', '--checkpoint-dir', required=True, help='Directory containing dataset')
+    p.add_argument('-bs', '--batch-size', default=32, type=int, help='Directory containing dataset')
+    p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
+    p.add_argument('--save-optimizer', action='store_true', help='Directory containing dataset')
+    p.add_argument('--verbose', action='store_true', help='Directory containing dataset')
+    p.add_argument('--log-after', default=-1, help='Directory containing dataset')
+    p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
+
     p = add_command('train', 'main.py', 'train -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
     p.add_argument('-i', '--iam-image-folder', required=True, help='Image Folder')
@@ -227,7 +267,7 @@ if __name__ == "__main__":
     p.add_argument('-bs', '--batch-size', default=32, type=int, help='Directory containing dataset')
     p.add_argument('-pm', '--pin-memory', action='store_true', help='Directory containing dataset')
     p.add_argument('--save-optimizer', action='store_true', help='Directory containing dataset')
-    p.add_argument('--log-after', default=10, help='Directory containing dataset')
+    p.add_argument('--log-after', default=-1, help='Directory containing dataset')
     p.add_argument('--no-save', action='store_true', help='Directory containing dataset')
     p.add_argument('--verbose', action='store_true', help='Directory containing dataset')
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
@@ -245,17 +285,20 @@ if __name__ == "__main__":
     p.add_argument('-p', '--predictions', default=None, help='Directory containing dataset')
 
     args = parser.parse_args()
-    if args.command == 'train':
+    if args.command in {'train', 'pretrain'}:
         log_wandb = False
         if args.wandb_project is not None:
             assert args.wandb_entity is not None 
             conf = vars(args)
-            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing)})
+            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"command": args.command, "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing)})
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
         engine = Engine(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
-        engine.train(args.checkpoint_dir, args.iam_annotation_txt, args.iam_image_folder, args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
+        if args.command == "train":
+            engine.train(args.checkpoint_dir, ("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
+        elif args.command == "pretrain":
+            engine.train(args.checkpoint_dir, ("Synthetic", (args.pretrained)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=False, log_after=int(args.log_after))
 
     elif args.command == 'test':
         engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
