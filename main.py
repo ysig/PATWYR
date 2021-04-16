@@ -179,6 +179,7 @@ class Engine(object):
             hypo += self.model.gen(img.to(self.device))
             ref += self.model.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
+        print(f"Test: wer = {wer}, cer = {cer}")
 
     def log(self, metrics, step, verbose):
         if verbose:
@@ -219,9 +220,9 @@ class Engine(object):
         self.model, self.optim = model.to(self.device), optimizer
 
     def save(self, epochs, metrics, save_optimizer, save_pkl):
-        d = {'model': self.model, 'metrics': metrics, 'epochs': epochs}
+        d = {'model': self.model.state_dict(), 'metrics': metrics, 'epochs': epochs}
         if save_optimizer:
-            d['optimizer'] = self.optim
+            d['optimizer'] = self.optim.state_dict()
         torch.save(d, save_pkl)
 
     def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save, verbose):
@@ -308,6 +309,7 @@ if __name__ == "__main__":
         engine = Engine(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
         if args.command == "train":
             engine.train(args.checkpoint_dir, ("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
+            engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)))
         elif args.command == "pretrain":
             engine.train(args.checkpoint_dir, ("Synthetic", (args.pretrained)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=False, log_after=int(args.log_after))
 
