@@ -94,6 +94,7 @@ class Engine(object):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
 
+        self.dataset_init(dataset)
         train_loader = self.dataloader(dataset[0], 'train', batch_size, num_workers, pin_memory)
         val_loader = self.dataloader(dataset[0], 'val', batch_size, num_workers, False)
 
