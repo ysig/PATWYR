@@ -10,7 +10,6 @@ from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
 import torchvision.transforms.functional as FTV
 import wandb
 import os
-import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from torch.nn.modules.loss import _WeightedLoss
 
@@ -148,6 +147,7 @@ class Engine(object):
             for i in range(img.size()[0]):
                 imgs.append((FTV.to_pil_image(img[i]), str(out[i])))
         if verbose:
+            import matplotlib.pyplot as plt
             fig, axs = plt.subplots(len(imgs), 1)
             for ax, (img, t) in zip(axs, imgs):
                 ax.imshow(img)
