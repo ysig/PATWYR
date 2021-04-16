@@ -312,7 +312,7 @@ if __name__ == "__main__":
             engine.train(args.checkpoint_dir, ("Synthetic", (args.pretrained)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=False, log_after=int(args.log_after))
 
     elif args.command == 'test':
-        engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
+        engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, 'best_model.pkl'), device=args.device)
         engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)))
 
     elif args.command == 'gen':
