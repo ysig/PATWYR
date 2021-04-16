@@ -106,15 +106,20 @@ class Engine(object):
 
         if self.wandb:
             wandb.watch(self.model)
+
         for i in trange(self.epochs, epochs):
             self.adjust_learning_rate(i, lr, lr_decay)
+    
             hypo, ref = [], []
             total_loss, dim1 = 0, 0
+    
             self.model.train()
+    
             if verbose:
                 iterator = tqdm(train_loader, total=len(train_loader), desc='Training')
             else:
                 iterator = train_loader
+    
             for img, txt in iterator:
                 self.optim.zero_grad()
                 bt = txt.squeeze(1).permute(1, 0).to(self.device)
@@ -132,16 +137,19 @@ class Engine(object):
             mean_loss_train = total_loss/dim1
 
             self.model.eval()
+    
             if i <= log_after:
-                self.log({'train_wer': twer, 'train_cer': tcer, 'train_loss': mean_loss_train}, i, verbose)
+                self.log({'WER-train': twer, 'CER-train': tcer, 'LOSS-train': mean_loss_train}, i, verbose)
                 continue
 
             hypo, hypo_greedy, ref = [], [], []
             with torch.no_grad():
+    
                 if verbose:
                     iterator = tqdm(val_loader, total=len(val_loader), desc='Validation')
                 else:
                     iterator = val_loader
+    
                 total_loss, dim1 = 0, 0
                 for img, txt in iterator:
                     bt = txt.squeeze(1).permute(1, 0).to(self.device)
@@ -157,7 +165,9 @@ class Engine(object):
             mean_loss_val = total_loss/dim1
             vwer, vcer = self.metrics(hypo, ref)
             vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
-            metrics = {'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'val_wer_greedy': vwer_greedy, 'val_cer_greedy': vcer_greedy, 'train_loss': mean_loss_train, 'val_loss': mean_loss_val}
+    
+            metrics = {'WER-train': twer, 'CER-train': tcer, 'WER-val': vwer, 'CER-val': vcer, 'WER-val-greedy': vwer_greedy,
+                       'CER-val-greedy': vcer_greedy, 'LOSS-train': mean_loss_train, 'LOSSval-loss': mean_loss_val}
             self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose)
 
     def test(self, annotation_txt, image_folder):
