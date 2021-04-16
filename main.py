@@ -66,6 +66,12 @@ class Engine(object):
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
 
+    def loss(self, criterion, b, trgt):
+        loss = 0
+        for j in range(trgt.size()[0]):
+            loss += criterion(b[j], trgt[j])
+        return loss, trgt.size()[0]
+
     def train(self, checkpoint_dir, annotation_txt, image_folder, epochs, lr, lr_decay, batch_size, num_workers, pin_memory, label_smoothing, smoothing_eps, verbose=False, save_optimizer=False, no_save=False, log_after=10):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir, exist_ok=True)
@@ -93,15 +99,14 @@ class Engine(object):
                 bt = txt.squeeze(1).permute(1, 0).to(self.device)
                 b = self.model(bt[0:MAX_LEN], img.to(self.device))
                 trgt = bt[1:].permute(1, 0)
-                loss = 0
-                for j in range(trgt.size()[0]):
-                    loss += criterion(b[j], trgt[j])
-                (loss/trgt.size()[0]).backward()
+                loss, bs = self.loss(criterion, b, trgt)
+                (loss/bs).backward()
                 self.optim.step()
                 total_loss += loss.detach().item()
-                dim1 += trgt.size()[0]
+                dim1 += bs
                 hypo += self.model.to_text(torch.argmax(b, dim=2))
                 ref += self.model.to_text(trgt)
+
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
 
@@ -116,6 +121,7 @@ class Engine(object):
                     iterator = tqdm(val_loader, total=len(val_loader), desc='Validation')
                 else:
                     iterator = val_loader
+                total_loss, dim1 = 0, 0
                 for img, txt in iterator:
                     bt = txt.squeeze(1).permute(1, 0).to(self.device)
                     b = self.model(bt[0:MAX_LEN], img.to(self.device))
@@ -123,9 +129,14 @@ class Engine(object):
                     hypo += self.model.to_text(torch.argmax(b, dim=2))
                     hypo_greedy += self.model.gen(img.to(self.device))
                     ref += self.model.to_text(trgt)
+                    loss, bs = self.loss(criterion, b, trgt)
+                    total_loss += loss.detach().item()
+                    dim1 += bs
+
+            mean_loss_val = total_loss/dim1
             vwer, vcer = self.metrics(hypo, ref)
             vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
-            metrics = {'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'val_wer_greedy': vwer_greedy, 'val_cer_greedy': vcer_greedy, 'train_loss': mean_loss_train}
+            metrics = {'train_wer': twer, 'train_cer': tcer, 'val_wer': vwer, 'val_cer': vcer, 'val_wer_greedy': vwer_greedy, 'val_cer_greedy': vcer_greedy, 'train_loss': mean_loss_train, 'val_loss': mean_loss_val}
             self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose)
 
     def test(self, annotation_txt, image_folder):
