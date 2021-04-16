@@ -227,7 +227,7 @@ class Engine(object):
 
     def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save, verbose):
         self.log(metrics, step, verbose)
-        if self.metrics_.get('val_cer', 10000) > metrics['val_cer']:
+        if self.metrics_.get('CER-val-greedy', 10000) > metrics['CER-val-greedy']:
             self.metrics_ = metrics
             if not no_save:
                 self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'best_model.pkl'))
