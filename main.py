@@ -167,7 +167,7 @@ class Engine(object):
             vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
     
             metrics = {'WER-train': twer, 'CER-train': tcer, 'WER-val': vwer, 'CER-val': vcer, 'WER-val-greedy': vwer_greedy,
-                       'CER-val-greedy': vcer_greedy, 'LOSS-train': mean_loss_train, 'LOSSval-loss': mean_loss_val}
+                       'CER-val-greedy': vcer_greedy, 'LOSS-train': mean_loss_train, 'LOSS-val': mean_loss_val}
             self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose)
 
     def test(self, dataset):
