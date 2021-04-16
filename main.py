@@ -170,8 +170,9 @@ class Engine(object):
                        'CER-val-greedy': vcer_greedy, 'LOSS-train': mean_loss_train, 'LOSSval-loss': mean_loss_val}
             self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose)
 
-    def test(self, annotation_txt, image_folder):
-        test_loader = self.dataloader('test', 1, num_workers, False)
+    def test(self, dataset):
+        self.dataset_init(dataset)
+        test_loader = self.dataloader(dataset[0], 'test', 1, num_workers, False)
         self.eval_()
         hypo, ref = [], []
         for img, txt in val_loader:
@@ -312,7 +313,7 @@ if __name__ == "__main__":
 
     elif args.command == 'test':
         engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, 'best_model'), device=args.device)
-        engine.test(args.iam_annotation_txt, args.iam_image_folder)
+        engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)))
 
     elif args.command == 'gen':
         engine = Engine(checkpoint=args.resume_checkpoint, device=args.device)
