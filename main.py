@@ -6,7 +6,7 @@ import torchvision
 from tqdm.auto import tqdm, trange
 from metrics import ocr_metrics
 from architecture import TransformerHTR, load_batch_image
-from dataset import IAM, iam_dataloader, ALPHABET, MAX_LEN
+from dataset import IAM, make_dataloader, ALPHABET, MAX_LEN
 import torchvision.transforms.functional as FTV
 import wandb
 import os
