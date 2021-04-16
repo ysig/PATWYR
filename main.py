@@ -77,10 +77,9 @@ class Engine(object):
         # wer, cer = self.metrics_obj.wer(hypo, ref), self.metrics_obj.cer(hypo, ref)
         return ocr_metrics(hypo, ref)
 
-    def adjust_learning_rate(self, epoch, lr, lr_decay):
-        """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    def adjust_learning_rate(self, epoch, lr, lr_decay, decay_factor=0.5):
         if lr_decay is not None:
-            lr = lr * (0.5 ** (epoch // lr_decay))
+            lr = lr * (decay_factor ** (epoch // lr_decay))
         # print('epoch:',epoch,'lr:',lr)
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr

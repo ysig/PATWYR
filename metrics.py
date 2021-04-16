@@ -23,6 +23,7 @@ def ocr_metrics(predicts, ground_truth):
         dist = editdistance.eval(pd_cer, gt_cer)
         cer.append(dist / (max(len(pd_cer), len(gt_cer))))
 
+        print(pd)
         pd_wer, gt_wer = pd.split('|'), gt.split('|')
         dist = editdistance.eval(pd_wer, gt_wer)
         wer.append(dist / (max(len(pd_wer), len(gt_wer))))
@@ -31,7 +32,7 @@ def ocr_metrics(predicts, ground_truth):
         # dist = editdistance.eval(pd_ser, gt_ser)
         # ser.append(dist / (max(len(pd_ser), len(gt_ser))))
 
-    metrics = [cer, wer]#, ser]
+    metrics = [wer, cer]#, ser]
     metrics = np.mean(metrics, axis=1)
 
     return metrics
