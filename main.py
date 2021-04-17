@@ -173,7 +173,7 @@ class Engine(object):
     def test(self, dataset, num_workers):
         self.dataset_init(dataset)
         test_loader = self.dataloader(dataset[0], 'test', 32, num_workers, False)
-        self.eval_()
+        self.model.eval()
         hypo, ref = [], []
         for img, txt in val_loader:
             hypo += self.model.gen(img.to(self.device))
