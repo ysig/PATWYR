@@ -290,6 +290,7 @@ if __name__ == "__main__":
     p.add_argument('-i', '--image-folder', required=True, help='Image Folder')
     p.add_argument('-d', '--device', default='cuda', help='Directory containing dataset')
     p.add_argument('-c', '--checkpoint-dir', default=None, help='Directory containing dataset')
+    p.add_argument('-w', '--num_workers', type=int, default=4)
 
     p = add_command('gen', 'main.py', 'gen -a ascii/lines.txt -i ')
     p.add_argument('-i', '--image-dir', required=True, help='Image Folder')
