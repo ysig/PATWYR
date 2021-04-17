@@ -170,9 +170,9 @@ class Engine(object):
                        'CER-val-greedy': vcer_greedy, 'LOSS-train': mean_loss_train, 'LOSS-val': mean_loss_val}
             self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose)
 
-    def test(self, dataset):
+    def test(self, dataset, num_workers):
         self.dataset_init(dataset)
-        test_loader = self.dataloader(dataset[0], 'test', 1, num_workers, False)
+        test_loader = self.dataloader(dataset[0], 'test', 32, num_workers, False)
         self.eval_()
         hypo, ref = [], []
         for img, txt in val_loader:
@@ -283,6 +283,7 @@ if __name__ == "__main__":
     p.add_argument('--no-save', action='store_true', help='Directory containing dataset')
     p.add_argument('--verbose', action='store_true', help='Directory containing dataset')
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
+    p.add_argument('-w', '--num_workers', type=int, default=4)
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--annotation-txt', required=True, help='Annotation txt file')
@@ -309,13 +310,13 @@ if __name__ == "__main__":
         engine = Engine(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
         if args.command == "train":
             engine.train(args.checkpoint_dir, ("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
-            engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)))
+            engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.num_workers)
         elif args.command == "pretrain":
             engine.train(args.checkpoint_dir, ("Synthetic", (args.pretrained)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=False, log_after=int(args.log_after))
 
     elif args.command == 'test':
         engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, 'best_model.pkl'), device=args.device)
-        engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)))
+        engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.num_workers)
 
     elif args.command == 'gen':
         engine = Engine(checkpoint=args.resume_checkpoint, device=args.device)
