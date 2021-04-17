@@ -285,8 +285,8 @@ if __name__ == "__main__":
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
-    p.add_argument('-a', '--annotation-txt', required=True, help='Annotation txt file')
-    p.add_argument('-i', '--image-folder', required=True, help='Image Folder')
+    p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
+    p.add_argument('-i', '--iam-image-folder', required=True, help='Image Folder')
     p.add_argument('-d', '--device', default='cuda', help='Directory containing dataset')
     p.add_argument('-c', '--checkpoint-dir', default=None, help='Directory containing dataset')
     p.add_argument('-w', '--num_workers', type=int, default=4)
