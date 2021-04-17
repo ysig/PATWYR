@@ -175,7 +175,7 @@ class Engine(object):
         test_loader = self.dataloader(dataset[0], 'test', 32, num_workers, False)
         self.model.eval()
         hypo, ref = [], []
-        for img, txt in test_loader:
+        for img, txt in tqdm(test_loader, total=len(train_loader), desc='Testing'):
             hypo += self.model.gen(img.to(self.device))
             ref += self.model.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
