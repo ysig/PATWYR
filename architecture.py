@@ -72,17 +72,17 @@ class TransformerHTR(nn.Module):
         self.text_len = text_len
         self.alphabet = alphabet
         self.inv_alphabet = {j: i for i, j in alphabet.items()}
-        self.init_weights()
+    #     self.init_weights()
 
-    def init_weights(self):
-        initrange = 0.1
-        self.fc.bias.data.zero_()
-        self.fc.weight.data.uniform_(-initrange, initrange)
-        self.fc_bar.bias.data.zero_()
-        self.fc_bar.weight.data.uniform_(-initrange, initrange)
-        self.ebl.weight.data.uniform_(-initrange, initrange)
-        self.linear.bias.data.zero_()
-        self.linear.weight.data.uniform_(-initrange, initrange)
+    # def init_weights(self):
+    #     initrange = 0.1
+    #     self.fc.bias.data.zero_()
+    #     self.fc.weight.data.uniform_(-initrange, initrange)
+    #     self.fc_bar.bias.data.zero_()
+    #     self.fc_bar.weight.data.uniform_(-initrange, initrange)
+    #     self.ebl.weight.data.uniform_(-initrange, initrange)
+    #     self.linear.bias.data.zero_()
+    #     self.linear.weight.data.uniform_(-initrange, initrange)
 
     def generate_square_subsequent_mask(self, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
