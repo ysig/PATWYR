@@ -175,7 +175,7 @@ class Engine(object):
         test_loader = self.dataloader(dataset[0], 'test', 32, num_workers, False)
         self.model.eval()
         hypo, ref = [], []
-        for img, txt in val_loader:
+        for img, txt in test_loader:
             hypo += self.model.gen(img.to(self.device))
             ref += self.model.to_text(txt.squeeze(1))
         wer, cer = self.metrics(hypo, ref)
