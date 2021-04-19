@@ -69,7 +69,7 @@ class Engine(object):
         
         elif dataset[0] == "Synthetic":
             if not hasattr(self, 'synthetic_dataset'):
-                self.synthetic_dataset = Sythetic(dataset[1], self.alphabet)
+                self.synthetic_dataset = Synthetic(dataset[1], self.alphabet)
         else:
             raise ValueError("Unrecognized Dataset")
 
