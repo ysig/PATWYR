@@ -66,7 +66,7 @@ class IAM(Dataset):
 def synthetic_make_date(image_folder):
     return [(f, str(os.path.splitext(f)[0].split('_')[0]).replace(" ", "|")) for f in os.listdir(image_folder)]
 
-class Sythetic(IAM):
+class Synthetic(IAM):
     def __init__(self, image_folder, alphabet):
         self.data = synthetic_make_date(image_folder)
         self.image_folder = image_folder
