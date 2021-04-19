@@ -308,11 +308,14 @@ if __name__ == "__main__":
             del conf['wandb_entity']
             log_wandb = True
         engine = Engine(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
+        if args.resume_checkpoint is not None:
+            print('Starting with')
+            engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.num_workers)
         if args.command == "train":
             engine.train(args.checkpoint_dir, ("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
             engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.num_workers)
         elif args.command == "pretrain":
-            engine.train(args.checkpoint_dir, ("Synthetic", (args.pretrained)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=False, log_after=int(args.log_after))
+            engine.train(args.checkpoint_dir, ("Synthetic", (args.synthetic_data)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=False, log_after=int(args.log_after))
 
     elif args.command == 'test':
         engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, 'best_model.pkl'), device=args.device)
