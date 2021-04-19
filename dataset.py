@@ -69,6 +69,7 @@ def synthetic_make_date(image_folder):
 class Synthetic(IAM):
     def __init__(self, image_folder, alphabet):
         self.data = synthetic_make_date(image_folder)
+        print(len(data))
         self.image_folder = image_folder
         self.alphabet = alphabet
 
