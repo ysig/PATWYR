@@ -64,7 +64,7 @@ class IAM(Dataset):
         return img, txt
 
 def synthetic_make_date(image_folder):
-    return [(f, str(os.path.splitext(f)[0].split('_')[0]).replace(" ", "|")) for f in os.listdir(image_folder)]
+    return [(f, str(os.path.splitext(f)[0].split('_')[0]).replace(" ", "|")) for f in os.listdir(image_folder) if len(os.path.splitext(f)[0]) < MAX_LEN-2]
 
 class Synthetic(IAM):
     def __init__(self, image_folder, alphabet):
