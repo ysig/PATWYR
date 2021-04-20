@@ -104,11 +104,18 @@ class Engine(object):
         else:
             criterion = nn.CrossEntropyLoss()
 
+        if decay_rate == 'plateau':
+            self.adjust_learning_rate(0, lr, None)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=5, verbose=True)
+        elif decay_rate is not None:
+            decay_rate = float(decay_rate)
+
         if self.wandb:
             wandb.watch(self.model)
 
         for i in trange(self.epochs, epochs):
-            self.adjust_learning_rate(i, lr, lr_decay)
+            if decay_rate != 'plateau'
+                self.adjust_learning_rate(i, lr, lr_decay)
     
             hypo, ref = [], []
             total_loss, dim1 = 0, 0
@@ -165,6 +172,8 @@ class Engine(object):
             mean_loss_val = total_loss/dim1
             vwer, vcer = self.metrics(hypo, ref)
             vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
+            if decay_rate == 'plateau':
+                scheduler.step(vcer)
     
             metrics = {'WER-train': twer, 'CER-train': tcer, 'WER-val': vwer, 'CER-val': vcer, 'WER-val-greedy': vwer_greedy,
                        'CER-val-greedy': vcer_greedy, 'LOSS-train': mean_loss_train, 'LOSS-val': mean_loss_val}
@@ -247,7 +256,7 @@ if __name__ == "__main__":
     p = add_command('pretrain', 'main.py', 'train -a ascii/lines.txt -i ')
     p.add_argument('--synthetic-data', required=True, help='Image Folder')
     p.add_argument('--lr', default=0.0002, type=float, help='Directory containing dataset')
-    p.add_argument('--lr_decay', default=None, type=int, help='Directory containing dataset')
+    p.add_argument('--lr_decay', default='plateau', type=str, help='Directory containing dataset')
     p.add_argument('--epochs', default=60, type=int, help='Directory containing dataset')
     p.add_argument('-d', '--device', default='cuda', help='Directory containing dataset')
     p.add_argument('-wp', '--wandb-project', type=str, default=None, help='Wandb-ID')
@@ -267,7 +276,7 @@ if __name__ == "__main__":
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
     p.add_argument('-i', '--iam-image-folder', required=True, help='Image Folder')
     p.add_argument('--lr', default=0.0002, type=float, help='Directory containing dataset')
-    p.add_argument('--lr_decay', default=20, type=int, help='Directory containing dataset')
+    p.add_argument('--lr_decay', default=20, type=str, help='Directory containing dataset')
     p.add_argument('--epochs', default=60, type=int, help='Directory containing dataset')
     p.add_argument('-d', '--device', default='cuda', help='Directory containing dataset')
     p.add_argument('-wp', '--wandb-project', type=str, default=None, help='Wandb-ID')
