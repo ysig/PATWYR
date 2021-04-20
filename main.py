@@ -104,17 +104,17 @@ class Engine(object):
         else:
             criterion = nn.CrossEntropyLoss()
 
-        if decay_rate == 'plateau':
+        if lr_decay == 'plateau':
             self.adjust_learning_rate(0, lr, None)
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=5, verbose=True)
-        elif decay_rate is not None:
+        elif lr_decay is not None:
             decay_rate = float(decay_rate)
 
         if self.wandb:
             wandb.watch(self.model)
 
         for i in trange(self.epochs, epochs):
-            if decay_rate != 'plateau':
+            if lr_decay != 'plateau':
                 self.adjust_learning_rate(i, lr, lr_decay)
     
             hypo, ref = [], []
@@ -172,7 +172,7 @@ class Engine(object):
             mean_loss_val = total_loss/dim1
             vwer, vcer = self.metrics(hypo, ref)
             vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
-            if decay_rate == 'plateau':
+            if lr_decay == 'plateau':
                 scheduler.step(vcer)
     
             metrics = {'WER-train': twer, 'CER-train': tcer, 'WER-val': vwer, 'CER-val': vcer, 'WER-val-greedy': vwer_greedy,
