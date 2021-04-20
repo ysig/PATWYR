@@ -114,7 +114,7 @@ class Engine(object):
             wandb.watch(self.model)
 
         for i in trange(self.epochs, epochs):
-            if decay_rate != 'plateau'
+            if decay_rate != 'plateau':
                 self.adjust_learning_rate(i, lr, lr_decay)
     
             hypo, ref = [], []
