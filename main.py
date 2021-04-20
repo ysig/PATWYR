@@ -109,7 +109,7 @@ class Engine(object):
             if dataset[0] == "IAM":
                 patience = 10
             elif dataset[0] == "Synthetic":
-                patience = 4
+                patience = 2
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=patience, verbose=True)
         elif lr_decay is not None:
             decay_rate = float(decay_rate)
