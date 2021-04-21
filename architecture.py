@@ -8,7 +8,7 @@ from dataset import load_image, load_text, ALPHABET, MAX_LEN
 
 
 class ResNetFeatures(nn.Module):
-    def __init__(self, pretrained=True):
+    def __init__(self, pretrained=False):
         super().__init__()
         # Input images x of handwritten text-lines, which might have
         # arbitrary lengths, are first processed by a Convolutional
@@ -18,7 +18,8 @@ class ResNetFeatures(nn.Module):
         # Such visual feature representation has a contextualized global view of the
         # whole input image while remaining compact.
         self.resnet = torchvision.models.resnet50(pretrained=pretrained)
-        # self.layer4 = self.resnet._make_layer(Bottleneck, 512, 3, stride=1, dilate=False)
+        self.resnet.inplanes = 512
+        self.layer3 = self.resnet._make_layer(Bottleneck, 256, 6, stride=1, dilate=False)
 
     def forward(self, x):
         # From https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
@@ -28,7 +29,7 @@ class ResNetFeatures(nn.Module):
         x = self.resnet.maxpool(x)
         x = self.resnet.layer1(x)
         x = self.resnet.layer2(x)
-        x = self.resnet.layer3(x)
+        x = self.layer3(x)
         return x
 
 
@@ -54,8 +55,8 @@ class TransformerHTR(nn.Module):
         super(TransformerHTR, self).__init__()
         # (Visual Feature) Encoder
         self.resnet = ResNetFeatures()
-        self.fc = nn.Linear(f*4, f)
-        self.pe_encode = PositionalEncoding(f, 140, dropout)
+        self.fc = nn.Linear(f*8, f)
+        self.pe_encode = PositionalEncoding(f, 279, dropout)
         self.fc_bar = nn.Linear(f, f)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
@@ -92,6 +93,7 @@ class TransformerHTR(nn.Module):
     def encode(self, x):
         x = self.resnet(x)
         b, f, h, w = x.size()
+        print(x.size())
         x = x.view(b, f*h, w).permute(0, 2, 1)
         x = F.relu(self.fc(x))
         x = self.pe_encode(x.permute(1, 0, 2))
