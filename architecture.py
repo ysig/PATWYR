@@ -8,7 +8,7 @@ from dataset import load_image, load_text, ALPHABET, MAX_LEN
 
 
 class ResNetFeatures(nn.Module):
-    def __init__(self, pretrained=False):
+    def __init__(self, pretrained=True):
         super().__init__()
         # Input images x of handwritten text-lines, which might have
         # arbitrary lengths, are first processed by a Convolutional
