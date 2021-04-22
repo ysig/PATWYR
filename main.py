@@ -21,7 +21,7 @@ class LabelSmoothingLoss(nn.Module):
         """
         super(LabelSmoothingLoss, self).__init__()
         self.smoothing = float(eps/len_A)
-        self.confidence = 1 - self.smoothing
+        self.confidence = 1 - ((len_A - 1)*eps/len_A)
         assert 0 <= self.smoothing < 1
         self.dim = dim
 
