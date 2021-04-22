@@ -20,8 +20,8 @@ class LabelSmoothingLoss(nn.Module):
            if 0 < smoothing < 1, it's smooth method
         """
         super(LabelSmoothingLoss, self).__init__()
-        self.confidence = float(1 - ((len_A - 1)*eps/len_A))
         self.smoothing = float(eps/len_A)
+        self.confidence = 1 - self.smoothing
         assert 0 <= self.smoothing < 1
         self.dim = dim
 
