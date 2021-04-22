@@ -55,7 +55,7 @@ class TransformerHTR(nn.Module):
         super(TransformerHTR, self).__init__()
         # (Visual Feature) Encoder
         self.resnet = ResNetFeatures()
-        self.fc = nn.Linear(f*8, f)
+        self.fc = nn.Linear(f*4, f)
         self.pe_encode = PositionalEncoding(f, 140, dropout)
         self.fc_bar = nn.Linear(f, f)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
@@ -92,7 +92,7 @@ class TransformerHTR(nn.Module):
 
     def encode(self, x):
         x = self.resnet(x)
-        b, f, h, w = x.size()
+        b, f, h, w = x.size()        
         x = x.view(b, f*h, w).permute(0, 2, 1)
         # x = F.relu(self.fc(x))
         x = self.fc(x)
