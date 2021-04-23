@@ -60,6 +60,7 @@ class TransformerHTR(nn.Module):
         self.fc_bar = nn.Linear(f, f)
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
+        self.layer_norm = nn.LayerNorm(f)
 
         # (Text Transcriber) Decoder
         self.ebl = nn.Embedding(dict_size, f)
@@ -74,6 +75,7 @@ class TransformerHTR(nn.Module):
         self.alphabet = alphabet
         self.inv_alphabet = {j: i for i, j in alphabet.items()}
         self.init_weights()
+        
 
     def init_weights(self):
         initrange = 0.1
@@ -94,12 +96,13 @@ class TransformerHTR(nn.Module):
         x = self.resnet(x)
         b, f, h, w = x.size()        
         x = x.view(b, f*h, w).permute(0, 2, 1)
-        x = F.relu(self.fc(x))
-        # x = self.fc(x)
+        # x = F.relu(self.fc(x))
+        x = self.fc(x)
         x = self.pe_encode(x.permute(1, 0, 2))
-        x = F.relu(self.fc_bar(x))
-        # x = self.fc_bar(x)
+        # x = F.relu(self.fc_bar(x))
+        x = self.fc_bar(x)
         x = self.transformer_encoder(x)
+        x = self.layer_norm(x)
         return x
 
     def decode(self, x, y):
