@@ -103,8 +103,8 @@ class TransformerHTR(nn.Module):
         # x = F.relu(self.fc_bar(x))
         x = self.fc_bar(x)
         x = self.transformer_encoder(x)
-        x = self.layer_norm(x)
         x = self.fc_hat(x)
+        x = self.layer_norm(x)
         return x
 
     def decode(self, x, y):
