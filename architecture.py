@@ -61,7 +61,6 @@ class TransformerHTR(nn.Module):
         encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
         self.layer_norm = nn.LayerNorm(f)
-        self.fc_hat = nn.Linear(f, f)
 
         # (Text Transcriber) Decoder
         self.ebl = nn.Embedding(dict_size, f)
@@ -103,7 +102,6 @@ class TransformerHTR(nn.Module):
         # x = F.relu(self.fc_bar(x))
         x = self.fc_bar(x)
         x = self.transformer_encoder(x)
-        x = self.fc_hat(x)
         x = self.layer_norm(x)
         return x
 
