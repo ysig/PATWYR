@@ -46,11 +46,11 @@ class Engine(object):
     def dataloader(self, dataset_type, purpose, batch_size, num_workers, pin_memory):
         if dataset_type == "IAM":
             if purpose == 'train':
-                split_file = os.path.join('splits', 'train.uttlist')
+                split_file = os.path.join(PP, 'splits', 'train.uttlist')
             elif purpose == 'val':
-                split_file = os.path.join('splits', 'validation.uttlist')
+                split_file = os.path.join(PP, 'splits', 'validation.uttlist')
             else:
-                split_file = os.path.join('splits', 'test.uttlist')
+                split_file = os.path.join(PP, 'splits', 'test.uttlist')
             return make_iam(self.iam_dataset, batch_size, num_workers, pin_memory, split_file)
         elif dataset_type == "Synthetic":
             synthetic_dataset = self.synthetic_dataset

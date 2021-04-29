@@ -65,9 +65,9 @@ class IAM(Dataset):
         txt = torch.LongTensor([self.alphabet[t] for t in load_text(txt)]).unsqueeze(0)
         return img, txt
 
-    def subset(self, file)
+    def subset(self, file):
         new_dataset = copy.deepcopy(self)
-        valid_key = {str(l.strip('\n')) for l in line open(file, 'r').readlines()}
+        valid_key = {str(l.strip('\n')) for l in open(file, 'r').readlines()}
         new_data = []
         for d, i in new_dataset.data:
             ds = os.path.split(os.path.split(d)[0])[1]
@@ -88,12 +88,20 @@ class Synthetic(IAM):
         self.alphabet = alphabet
 
 def make_iam(dataset, batch_size, num_workers, pin_memory, split_file=None):
-    
+    if split_file is not None:
+        dataset = dataset.subset(split_file)
     return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
-
-
 
 def make_dataloader(dataset, batch_size, num_workers, pin_memory, subset_indices=None):
     if subset_indices is not None:
         dataset = Subset(dataset, subset_indices)
     return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
+
+
+if __name__ == "__main__":
+    import sys
+    PP = os.path.dirname(__file__)
+    iam = IAM(sys.argv[1], sys.argv[2], ALPHABET)
+    print(len(iam.subset(os.path.join(PP, 'splits', 'train.uttlist'))))
+    print(len(iam.subset(os.path.join(PP, 'splits', 'validation.uttlist'))))
+    print(len(iam.subset(os.path.join(PP, 'splits', 'test.uttlist'))))

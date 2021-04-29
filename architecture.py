@@ -94,7 +94,7 @@ class TransformerHTR(nn.Module):
 
     def encode(self, x):
         x = self.resnet(x)
-        b, f, h, w = x.size()        
+        b, f, h, w = x.size()
         x = x.view(b, f*h, w).permute(0, 2, 1)
         # x = F.relu(self.fc(x))
         x = self.fc(x)
