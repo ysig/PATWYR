@@ -13,6 +13,7 @@ import os
 from torch.autograd import Variable
 from torch.nn.modules.loss import _WeightedLoss
 
+PP = os.path.dirname(__file__)
 
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, eps, len_A, dim=-1):
@@ -45,12 +46,12 @@ class Engine(object):
     def dataloader(self, dataset_type, purpose, batch_size, num_workers, pin_memory):
         if dataset_type == "IAM":
             if purpose == 'train':
-                indices = range(6482)
+                split_file = os.path.join('splits', 'train.uttlist')
             elif purpose == 'val':
-                indices = range(6482, 6482 + 976)
+                split_file = os.path.join('splits', 'validation.uttlist')
             else:
-                indices = range(6482 + 976, 6482 + 976 + 2914)
-            return make_dataloader(self.iam_dataset, batch_size, num_workers, pin_memory, indices)
+                split_file = os.path.join('splits', 'test.uttlist')
+            return make_iam(self.iam_dataset, batch_size, num_workers, pin_memory, split_file)
         elif dataset_type == "Synthetic":
             synthetic_dataset = self.synthetic_dataset
             if purpose == 'train':

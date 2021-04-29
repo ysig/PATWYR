@@ -8,6 +8,7 @@ import numpy as np
 from torchvision.transforms.functional import resize, pil_to_tensor, normalize
 import os
 import PIL
+import copy
 
 MAX_LEN = 95
 ALPHABET = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*': 8, '+': 9, ',': 10, '-': 11, '.': 12, '/': 13, '0': 14, '1': 15, '2': 16, '3': 17, '4': 18, '5': 19, '6': 20, '7': 21, '8': 22, '9': 23, ':': 24, ';': 25, '<E>': 26, '<P>': 27, '<S>': 28, '?': 29, 'A': 30, 'B': 31, 'C': 32, 'D': 33, 'E': 34, 'F': 35, 'G': 36, 'H': 37, 'I': 38, 'J': 39, 'K': 40, 'L': 41, 'M': 42, 'N': 43, 'O': 44, 'P': 45, 'Q': 46, 'R': 47, 'S': 48, 'T': 49, 'U': 50, 'V': 51, 'W': 52, 'X': 53, 'Y': 54, 'Z': 55, 'a': 56, 'b': 57, 'c': 58, 'd': 59, 'e': 60, 'f': 61, 'g': 62, 'h': 63, 'i': 64, 'j': 65, 'k': 66, 'l': 67, 'm': 68, 'n': 69, 'o': 70, 'p': 71, 'q': 72, 'r': 73, 's': 74, 't': 75, 'u': 76, 'v': 77, 'w': 78, 'x': 79, 'y': 80, 'z': 81, '|': 82}
@@ -64,6 +65,18 @@ class IAM(Dataset):
         txt = torch.LongTensor([self.alphabet[t] for t in load_text(txt)]).unsqueeze(0)
         return img, txt
 
+    def subset(self, file)
+        new_dataset = copy.deepcopy(self)
+        valid_key = {str(l.strip('\n')) for l in line open(file, 'r').readlines()}
+        new_data = []
+        for d, i in new_dataset.data:
+            ds = os.path.split(os.path.split(d)[0])[1]
+            if ds in valid_key:
+                new_data.append((d, i))
+        new_dataset.data = new_data
+        return new_dataset
+
+
 def synthetic_make_date(image_folder):
     return [(f, str(os.path.splitext(f)[0].split('_')[0]).replace(" ", "|")) for f in os.listdir(image_folder) if len(os.path.splitext(f)[0]) < MAX_LEN-2]
 
@@ -73,6 +86,12 @@ class Synthetic(IAM):
         print(len(self.data))
         self.image_folder = image_folder
         self.alphabet = alphabet
+
+def make_iam(dataset, batch_size, num_workers, pin_memory, split_file=None):
+    
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory)
+
+
 
 def make_dataloader(dataset, batch_size, num_workers, pin_memory, subset_indices=None):
     if subset_indices is not None:
