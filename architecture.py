@@ -96,13 +96,13 @@ class TransformerHTR(nn.Module):
         x = self.resnet(x)
         b, f, h, w = x.size()
         x = x.view(b, f*h, w).permute(0, 2, 1)
-        x = F.relu(self.fc(x))
-        # x = self.fc(x)
+        # x = F.relu(self.fc(x))
+        x = self.fc(x)
         x = self.pe_encode(x.permute(1, 0, 2))
-        x = F.relu(self.fc_bar(x))
-        # x = self.fc_bar(x)
+        # x = F.relu(self.fc_bar(x))
+        x = self.fc_bar(x)
         x = self.transformer_encoder(x)
-        x = self.layer_norm(x)
+        # x = self.layer_norm(x)
         return x
 
     def decode(self, x, y):
