@@ -17,9 +17,8 @@ def load_image(path, max_len=2227):
     img = PIL.Image.open(path).convert('L')
     array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
     img = resize(array, size=64).permute(0, 2, 1)
-    img = normalize(img, (0.5,), (0.5,))
-    a = nn.ZeroPad2d((0, max_len-img.size()[2], 0, 0))(img)
-    return a
+    img = nn.ZeroPad2d((0, max_len-img.size()[2], 0, 0))(1 - img)
+    return normalize(img, (0.5,), (0.5,))
 
 def gen_alphabet(data):
     data_ = set()
