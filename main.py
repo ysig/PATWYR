@@ -3,6 +3,7 @@ import torch
 from torch import nn, optim
 from torch.nn import functional as F
 import torchvision
+from torchvision import transforms
 from tqdm.auto import tqdm, trange
 from metrics import ocr_metrics
 from architecture import TransformerHTR, load_batch_image
@@ -45,20 +46,24 @@ class Engine(object):
 
     def dataloader(self, dataset_type, purpose, batch_size, num_workers, pin_memory):
         if dataset_type == "IAM":
+            transform = False
             if purpose == 'train':
                 split_file = os.path.join(PP, 'splits', 'train.uttlist')
+                transform = True
             elif purpose == 'val':
                 split_file = os.path.join(PP, 'splits', 'validation.uttlist')
             else:
                 split_file = os.path.join(PP, 'splits', 'test.uttlist')
-            return make_iam(self.iam_dataset, batch_size, num_workers, pin_memory, split_file)
+            return make_iam(self.iam_dataset, batch_size, num_workers, pin_memory, split_file, transform=transform)
         elif dataset_type == "Synthetic":
+            transform = False
             synthetic_dataset = self.synthetic_dataset
             if purpose == 'train':
+                transform = True
                 indices = range(int(0.8*len(synthetic_dataset)))
             else:
                 indices = range(int(0.8*len(synthetic_dataset)), len(synthetic_dataset))
-            return make_dataloader(synthetic_dataset, batch_size, num_workers, pin_memory, indices)
+            return make_dataloader(synthetic_dataset, batch_size, num_workers, pin_memory, indices, transform=transform)
         else:
             return ValueError("Unrecognized Dataset")
 
