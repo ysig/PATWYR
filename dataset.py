@@ -37,9 +37,7 @@ def load_image(path, max_len=2227, transform=False):
     else:
         img = nn.ZeroPad2d((0, max_len-img.size()[2], 0, 0))(img)
 
-    
-
-    return normalize(img, (0.5,), (0.5,))
+    return img
 
 def gen_alphabet(data):
     data_ = set()
