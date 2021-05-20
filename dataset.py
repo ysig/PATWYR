@@ -17,10 +17,11 @@ ALPHABET = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*':
 TRANSFORM = transforms.Compose([torchvision.transforms.ColorJitter(0.1, 0.1, 0.1, 0),torchvision.transforms.RandomAffine(20)])
 
 def load_image(path, max_len=2227, transform=False):
+    print(path)
     img = PIL.Image.open(path).convert('L')
     array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
-    # if transform:
-    # array = TRANSFORM(array.unsqueeze(0).repeat(1, 3, 1, 1)).mean(dim=1)
+    if transform:
+        array = TRANSFORM(array.unsqueeze(0).repeat(1, 3, 1, 1)).mean(dim=1)
     img = resize(array, size=64).permute(0, 2, 1)
     img = normalize(img, (0.5,), (0.5,))
     if transform:
