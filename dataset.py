@@ -61,8 +61,8 @@ def read_lines_text(annotation_txt):
                 spl = line.split(' ')
                 image_dir = spl[0].split('-')
                 dt = (os.path.join(image_dir[0], image_dir[0]+'-'+image_dir[1], spl[0]+'.png'), ' '.join(spl[8:]))
-                print(dt[0])
-                if dt[-1] not in ignore_files:
+                # print(dt[0])
+                if dt[0] not in ignore_files:
                     data.append(dt)
     return data
 
