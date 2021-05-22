@@ -118,28 +118,29 @@ class TransformerHTR(nn.Module):
         return self.decode(x, self.encode(y))
 
     @torch.no_grad()
-    def to_text_(self, x):
+    def to_text_(self, x, bulk=True):
         txt = []
         p = {self.alphabet["<E>"]}
         s = {self.alphabet["<S>"], self.alphabet["<P>"]}
         for idx in x:
-            if idx in p:
-                break
-            if idx in s:
-                continue
+            if not bulk:
+                if idx in p:
+                    break
+                if idx in s:
+                    continue
             txt.append(self.inv_alphabet[idx])
-        return "".join(txt)
+        return (txt if bulk else "".join(txt))
 
     @torch.no_grad()
     def to_text(self, x):
         x = x.cpu().numpy()
         if len(x.shape) == 2:
-            return [self.to_text_(x[i]) for i in range(x.shape[0])]
+            return [self.to_text_(x[i], bulk=True) for i in range(x.shape[0])]
         else:
-            return self.to_text_(x)
+            return self.to_text_(x, bulk=True)
 
     @torch.no_grad()
-    def gen(self, y):
+    def gen(self, y, bulk=False):
         y = self.encode(y)
         output_tokens = torch.full((y.size()[1], self.text_len), self.alphabet["<P>"]).long()
         output_tokens[:, 0] = self.alphabet["<S>"]
@@ -149,7 +150,11 @@ class TransformerHTR(nn.Module):
             x = self.decode(x, y)
             a = torch.argmax(x, dim=-1)
             output_tokens[:, j] = a[:,-1]
-        return self.to_text(output_tokens)
+        if bulk:
+            return self.to_text(output_tokens[:, 1:], bulk=True), output_tokens
+        else:
+            return self.to_text(output_tokens)
+
 
 
 # DEBUG
