@@ -6,7 +6,10 @@ Tool to metrics calculation through data and label (string and string).
 
 import string
 import unicodedata
-import editdistance
+try:
+    import editdistance
+except ImportError as ie:
+    print(ie)
 import numpy as np
 
 
