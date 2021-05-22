@@ -132,12 +132,12 @@ class TransformerHTR(nn.Module):
         return (txt if bulk else "".join(txt))
 
     @torch.no_grad()
-    def to_text(self, x):
+    def to_text(self, x, bulk=False):
         x = x.cpu().numpy()
         if len(x.shape) == 2:
-            return [self.to_text_(x[i], bulk=True) for i in range(x.shape[0])]
+            return [self.to_text_(x[i], bulk=bulk) for i in range(x.shape[0])]
         else:
-            return self.to_text_(x, bulk=True)
+            return self.to_text_(x, bulk=bulk)
 
     @torch.no_grad()
     def gen(self, y, bulk=False):
