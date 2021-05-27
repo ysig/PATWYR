@@ -11,6 +11,7 @@ import os
 import PIL
 import copy
 import random
+from augment import augmentation, preprocess
 
 MAX_LEN = 95
 ALPHABET = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*': 8, '+': 9, ',': 10, '-': 11, '.': 12, '/': 13, '0': 14, '1': 15, '2': 16, '3': 17, '4': 18, '5': 19, '6': 20, '7': 21, '8': 22, '9': 23, ':': 24, ';': 25, '<E>': 26, '<P>': 27, '<S>': 28, '?': 29, 'A': 30, 'B': 31, 'C': 32, 'D': 33, 'E': 34, 'F': 35, 'G': 36, 'H': 37, 'I': 38, 'J': 39, 'K': 40, 'L': 41, 'M': 42, 'N': 43, 'O': 44, 'P': 45, 'Q': 46, 'R': 47, 'S': 48, 'T': 49, 'U': 50, 'V': 51, 'W': 52, 'X': 53, 'Y': 54, 'Z': 55, 'a': 56, 'b': 57, 'c': 58, 'd': 59, 'e': 60, 'f': 61, 'g': 62, 'h': 63, 'i': 64, 'j': 65, 'k': 66, 'l': 67, 'm': 68, 'n': 69, 'o': 70, 'p': 71, 'q': 72, 'r': 73, 's': 74, 't': 75, 'u': 76, 'v': 77, 'w': 78, 'x': 79, 'y': 80, 'z': 81, '|': 82}
@@ -18,26 +19,13 @@ TRANSFORM = transforms.Compose([torchvision.transforms.ColorJitter(0.1, 0.1, 0.1
 ignore_files = {'a05/a05-116/a05-116-09.png'}
 
 def load_image(path, max_len=2227, transform=False):
-    img = PIL.Image.open(path).convert('L')
-    array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
+    array = preprocess(path, transform=transform)
     if transform:
-        array = TRANSFORM(array.unsqueeze(0).repeat(1, 3, 1, 1)).mean(dim=1)
-    img = resize(array, size=64).permute(0, 2, 1)
-    img = normalize(img, (0.5,), (0.5,))
-    
-    total = max_len-(img.size()[2])
-    if total < 0:
-        print(path)
-    if transform:
-        total = max_len-(img.size()[2])
-        if total > 0:
-            left = random.randint(0, total)
-            right = total - left
-            img = nn.ZeroPad2d((left, right, 0, 0))(img)
-    else:
-        img = nn.ZeroPad2d((0, max_len-img.size()[2], 0, 0))(img)
+        array = augmentation(array, rotation_range=1.5, scale_range=0.5, height_shift_range=0, width_shift_range=0, dilate_range=5, erode_range=5)
 
-    return img
+    array = array.astype(np.float32)/255.0
+    array = array.unsqueeze(0).unsqueeze(0).expand(1, 3, 1, 1)
+    return torch.from_array(array)
 
 def gen_alphabet(data):
     data_ = set()

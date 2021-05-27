@@ -23,7 +23,7 @@ class ResNetFeatures(nn.Module):
 
     def forward(self, x):
         # From https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
-        x = self.resnet.conv1(x.repeat(1, 3, 1, 1))
+        x = self.resnet.conv1(x)
         x = self.resnet.bn1(x)
         x = self.resnet.relu(x)
         x = self.resnet.maxpool(x)
