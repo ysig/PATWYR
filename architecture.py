@@ -61,7 +61,7 @@ class TransformerHTR(nn.Module):
         self.fc = nn.Linear(f*4, f)
         self.pe_encode = PositionalEncoding(f, 140, dropout)
         self.fc_bar = nn.Linear(f, f)
-        if use_enc:
+        if use_encoder:
             encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
             self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
         else:
