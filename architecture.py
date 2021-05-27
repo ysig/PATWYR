@@ -51,7 +51,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerHTR(nn.Module):
-    def __init__(self, alphabet, freeze_resnet=False, use_enc=False, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
+    def __init__(self, alphabet, freeze_resnet=False, use_encoder=False, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
         super(TransformerHTR, self).__init__()
         # (Visual Feature) Encoder
         self.resnet = ResNetFeatures()
@@ -69,7 +69,7 @@ class TransformerHTR(nn.Module):
         self.layer_norm = nn.LayerNorm(f)
 
         print('freeze-resnet', freeze_resnet)
-        print('use_enc', use_enc)
+        print('use_encoder', use_encoder)
         # (Text Transcriber) Decoder
         self.ebl = nn.Embedding(dict_size, f)
         self.pe_decode = PositionalEncoding(f, text_len, dropout)
