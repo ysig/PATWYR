@@ -37,12 +37,12 @@ class LabelSmoothingLoss(nn.Module):
 
 
 class Engine(object):
-    def __init__(self, checkpoint=None, lr=0.0002, device="cpu", wandb=False):
+    def __init__(self, checkpoint=None, lr=0.0002, device="cpu", wandb=False, freeze_resnet=False, use_encoder=False):
         self.alphabet = ALPHABET
         # self.metrics_obj = Metrics()
         self.wandb = wandb
         self.device = torch.device(device)
-        self.load_model(checkpoint)
+        self.load_model(checkpoint, freeze_resnet, use_encoder)
 
     def dataloader(self, dataset_type, purpose, batch_size, num_workers, pin_memory):
         if dataset_type == "IAM":
@@ -224,8 +224,8 @@ class Engine(object):
             wandb.log(metrics, step=step)
             wandb.log(images, step=step)
 
-    def load_model(self, checkpoint):
-        model = TransformerHTR(self.alphabet, text_len=MAX_LEN)
+    def load_model(self, checkpoint, freeze_resnet, use_encoder):
+        model = TransformerHTR(self.alphabet, text_len=MAX_LEN, freeze_resnet=freeze_resnet, use_encoder=use_encoder)
         optimizer = optim.Adam(list(model.parameters()), lr=0.001)
         if checkpoint is not None:
             d = torch.load(checkpoint, map_location=self.device)
@@ -281,6 +281,8 @@ if __name__ == "__main__":
     p.add_argument('--verbose', action='store_true', help='Directory containing dataset')
     p.add_argument('--log-after', default=-1, help='Directory containing dataset')
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
+    p.add_argument('--freeze-resnet', action='store_true', help='Directory containing dataset')
+    p.add_argument('--use-enc', action='store_true', help='Directory containing dataset')
 
     p = add_command('train', 'main.py', 'train -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
@@ -302,6 +304,8 @@ if __name__ == "__main__":
     p.add_argument('--no-save', action='store_true', help='Directory containing dataset')
     p.add_argument('--verbose', action='store_true', help='Directory containing dataset')
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
+    p.add_argument('--freeze-resnet', action='store_true', help='Directory containing dataset')
+    p.add_argument('--use-enc', action='store_true', help='Directory containing dataset')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
@@ -322,11 +326,11 @@ if __name__ == "__main__":
         if args.wandb_project is not None:
             assert args.wandb_entity is not None 
             conf = vars(args)
-            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"command": args.command, "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing)})
+            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"command": args.command, "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing), 'freeze_resnet': bool(args.freeze_resnet), 'use_encoder': bool(args.use_encoder)})
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
-        engine = Engine(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb)
+        engine = Engine(checkpoint=args.resume_checkpoint, device=args.device, wandb=log_wandb, freeze_resnet=bool(args.freeze_resnet), use_encoder=bool(args.use_encoder))
         if args.resume_checkpoint is not None:
             print('Starting with')
             engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.num_workers)

@@ -51,15 +51,21 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerHTR(nn.Module):
-    def __init__(self, alphabet, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
+    def __init__(self, alphabet, freeze_resnet=False, use_enc=False, dict_size=83, f=1024, num_layers=4, num_heads=8, dropout=0.1, text_len=100):
         super(TransformerHTR, self).__init__()
         # (Visual Feature) Encoder
         self.resnet = ResNetFeatures()
+        if freeze_resnet:
+            for param in self.resnet.parameters():
+                param.requires_grad = False
         self.fc = nn.Linear(f*4, f)
         self.pe_encode = PositionalEncoding(f, 140, dropout)
         self.fc_bar = nn.Linear(f, f)
-        encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
+        if use_enc:
+            encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
+            self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
+        else:
+            self.transformer_encoder = nn.Identity()
         self.layer_norm = nn.LayerNorm(f)
 
         # (Text Transcriber) Decoder
