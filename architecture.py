@@ -68,6 +68,8 @@ class TransformerHTR(nn.Module):
             self.transformer_encoder = nn.Identity()
         self.layer_norm = nn.LayerNorm(f)
 
+        print('freeze-resnet', freeze_resnet)
+        print('use_enc', use_enc)
         # (Text Transcriber) Decoder
         self.ebl = nn.Embedding(dict_size, f)
         self.pe_decode = PositionalEncoding(f, text_len, dropout)
