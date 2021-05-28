@@ -85,7 +85,7 @@ class Engine(object):
 
     def adjust_learning_rate(self, epoch, lr, lr_decay, decay_factor=0.5):
         if lr_decay is not None:
-            lr = lr * (decay_factor ** (epoch // lr_decay))
+            lr = lr * (decay_factor ** int(epoch // lr_decay))
         # print('epoch:',epoch,'lr:',lr)
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
