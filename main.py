@@ -85,7 +85,7 @@ class Engine(object):
 
     def adjust_learning_rate(self, epoch, lr, lr_decay, decay_factor=0.5):
         if lr_decay is not None:
-            lr = lr * (decay_factor ** int(epoch // lr_decay))
+            lr = lr * (decay_factor ** (epoch // lr_decay))
         # print('epoch:',epoch,'lr:',lr)
         for param_group in self.optim.param_groups:
             param_group['lr'] = lr
@@ -118,7 +118,7 @@ class Engine(object):
                 patience = 2
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=patience, verbose=True)
         elif lr_decay is not None:
-            lr_decay = float(lr_decay)
+            lr_decay = int(lr_decay)
 
         if self.wandb:
             wandb.watch(self.model)
