@@ -56,15 +56,18 @@ class TransformerHTR(nn.Module):
         # (Visual Feature) Encoder
         self.resnet = ResNetFeatures()
         if freeze_resnet:
-            for param in self.resnet.parameters():
+            print('Freezing-resnet')
+            for param in self.resnet.resnet.parameters():
                 param.requires_grad = False
         self.fc = nn.Linear(f*4, f)
         self.pe_encode = PositionalEncoding(f, 140, dropout)
         self.fc_bar = nn.Linear(f, f)
         if use_encoder:
+            print('Transformer Encoder')
             encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
             self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
         else:
+            print('Identity encoder')
             self.transformer_encoder = nn.Identity()
         self.layer_norm = nn.LayerNorm(f)
 
