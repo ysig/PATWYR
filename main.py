@@ -328,7 +328,7 @@ if __name__ == "__main__":
         if args.wandb_project is not None:
             assert args.wandb_entity is not None 
             conf = vars(args)
-            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"command": args.command, "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing), 'freeze_resnet': bool(args.freeze_resnet), 'use_encoder': bool(args.use_encoder)})
+            wandb.init(name=args.wandb_name, project=args.wandb_project, entity=args.wandb_entity, config={"command": args.command, "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing), 'freeze_resnet': bool(args.freeze_resnet), 'use_encoder': bool(args.use_encoder)})
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
