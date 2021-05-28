@@ -283,6 +283,7 @@ if __name__ == "__main__":
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
     p.add_argument('--freeze-resnet', action='store_true', help='Directory containing dataset')
     p.add_argument('--use-encoder', action='store_true', help='Directory containing dataset')
+    p.add_argument('-wn', '--wandb-name', type=str, default=None, help='Wandb-ID')
 
     p = add_command('train', 'main.py', 'train -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
@@ -306,6 +307,7 @@ if __name__ == "__main__":
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
     p.add_argument('--freeze-resnet', action='store_true', help='Directory containing dataset')
     p.add_argument('--use-encoder', action='store_true', help='Directory containing dataset')
+    p.add_argument('-wn', '--wandb-name', type=str, default=None, help='Wandb-ID')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
