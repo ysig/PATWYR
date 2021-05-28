@@ -283,6 +283,7 @@ if __name__ == "__main__":
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
     p.add_argument('--freeze-resnet', action='store_true', help='Directory containing dataset')
     p.add_argument('--use-encoder', action='store_true', help='Directory containing dataset')
+    p.add_argument('-wn', '--wandb-name', type=str, default=None, help='Wandb-ID')
 
     p = add_command('train', 'main.py', 'train -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
@@ -306,6 +307,7 @@ if __name__ == "__main__":
     p.add_argument('--label-smoothing', action='store_true', help='Directory containing dataset')
     p.add_argument('--freeze-resnet', action='store_true', help='Directory containing dataset')
     p.add_argument('--use-encoder', action='store_true', help='Directory containing dataset')
+    p.add_argument('-wn', '--wandb-name', type=str, default=None, help='Wandb-ID')
 
     p = add_command('test', 'main.py', 'test -a ascii/lines.txt -i ')
     p.add_argument('-a', '--iam-annotation-txt', required=True, help='Annotation txt file')
@@ -326,7 +328,7 @@ if __name__ == "__main__":
         if args.wandb_project is not None:
             assert args.wandb_entity is not None 
             conf = vars(args)
-            wandb.init(project=args.wandb_project, entity=args.wandb_entity, config={"command": args.command, "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing), 'freeze_resnet': bool(args.freeze_resnet), 'use_encoder': bool(args.use_encoder)})
+            wandb.init(name=args.wandb_name, project=args.wandb_project, entity=args.wandb_entity, config={"command": args.command, "epochs": args.epochs, "batch_size": args.batch_size, "lr": args.lr, "lr_decay": args.lr_decay, "smoothing_eps": args.smoothing_eps, 'label_smoothing': bool(args.label_smoothing), 'freeze_resnet': bool(args.freeze_resnet), 'use_encoder': bool(args.use_encoder)})
             del conf['wandb_project']
             del conf['wandb_entity']
             log_wandb = True
