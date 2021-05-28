@@ -18,6 +18,7 @@ TRANSFORM = transforms.Compose([torchvision.transforms.ColorJitter(0.1, 0.1, 0.1
 ignore_files = {'a05/a05-116/a05-116-09.png'}
 
 def load_image(path, max_len=2227, transform=False):
+    transform = False # Ignore argument for now.
     img = PIL.Image.open(path).convert('L')
     array = torch.Tensor(np.array(img)).unsqueeze(0).permute(0, 2, 1).float()/255.0
     if transform:
