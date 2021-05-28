@@ -23,8 +23,8 @@ def load_image(path, max_len=2227, transform=False):
         array = augmentation(array, rotation_range=1.5, scale_range=0.5, height_shift_range=0, width_shift_range=0, dilate_range=5, erode_range=5)
 
     array = array.astype(np.float32)/255.0
-    array = array.unsqueeze(0).unsqueeze(0).expand(1, 3, 1, 1)
-    return torch.from_array(array)
+    array = torch.from_array(array).unsqueeze(0).unsqueeze(0).expand(1, 3, 1, 1)
+    return array
 
 def gen_alphabet(data):
     data_ = set()
