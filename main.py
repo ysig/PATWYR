@@ -118,7 +118,7 @@ class Engine(object):
                 patience = 2
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='min', factor=0.5, patience=patience, verbose=True)
         elif lr_decay is not None:
-            lr_decay = float(lr_decay)
+            lr_decay = int(lr_decay)
 
         if self.wandb:
             wandb.watch(self.model)
