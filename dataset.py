@@ -20,7 +20,7 @@ ignore_files = {'a05/a05-116/a05-116-09.png'}
 def load_image(path, max_len=2227, transform=False):
     array = preprocess(path, (max_len, 64), random_pad=transform)
     if transform:
-        array = augmentation(array, rotation_range=1.5, scale_range=0.5, height_shift_range=0, width_shift_range=0, dilate_range=5, erode_range=5)
+        array = augmentation(array, rotation_range=1.5, scale_range=0.5, height_shift_range=0, width_shift_range=0, dilate_range=2, erode_range=2)
 
     array = array.astype(np.float32)/255.0
     return torch.from_numpy(array).unsqueeze(0)
