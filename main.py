@@ -226,9 +226,9 @@ class Engine(object):
 
     def load_model(self, checkpoint, freeze_resnet, use_encoder):
         model = TransformerHTR(self.alphabet, text_len=MAX_LEN, freeze_resnet=freeze_resnet, use_encoder=use_encoder)
-        optimizer = optim.Adam(list(model.parameters()), lr=0.001)
+        optimizer = optim.AdamW(list(model.parameters()), lr=0.001)
         if checkpoint is not None:
-            d = torch.load(checkpoint, map_location=self.device)
+            d = torch.load(checkpoint, map_location=self.device)s
             self.metrics_ = d['metrics']
             self.epochs = d['epochs']
             model.load_state_dict(d['model'])
