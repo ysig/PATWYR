@@ -246,7 +246,7 @@ class Engine(object):
 
     def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save, verbose):
         self.log(metrics, step, verbose)
-        if self.metrics_.get('CER-val-greedy', 10000) > metrics['CER-val-greedy']:
+        if self.metrics_.get('WER-val-greedy', 10000) > metrics['WER-val-greedy']:
             self.metrics_ = metrics
             if not no_save:
                 self.save(step, metrics, save_optimizer, os.path.join(checkpoint_dir, 'best_model.pkl'))
@@ -338,6 +338,7 @@ if __name__ == "__main__":
             engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.num_workers)
         if args.command == "train":
             engine.train(args.checkpoint_dir, ("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=bool(args.no_save), log_after=int(args.log_after))
+            engine = Engine(checkpoint=os.path.join(args.checkpoint_dir, "best_model.pkl"), device=args.device, freeze_resnet=bool(args.freeze_resnet), use_encoder=bool(args.use_encoder))
             engine.test(("IAM", (args.iam_annotation_txt, args.iam_image_folder)), args.num_workers)
         elif args.command == "pretrain":
             engine.train(args.checkpoint_dir, ("Synthetic", (args.synthetic_data)), args.epochs, args.lr, args.lr_decay, args.batch_size, args.num_workers, bool(args.pin_memory), bool(args.label_smoothing), args.smoothing_eps, verbose=bool(args.verbose), save_optimizer=bool(args.save_optimizer), no_save=False, log_after=int(args.log_after))
