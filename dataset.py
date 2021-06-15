@@ -11,17 +11,27 @@ import os
 import PIL
 import copy
 import random
-from augment import augmentation, preprocess
+from augment import augmentor
+import cv2
 
 MAX_LEN = 95
 ALPHABET = {' ': 0, '!': 1, '"': 2, '#': 3, '&': 4, "'": 5, '(': 6, ')': 7, '*': 8, '+': 9, ',': 10, '-': 11, '.': 12, '/': 13, '0': 14, '1': 15, '2': 16, '3': 17, '4': 18, '5': 19, '6': 20, '7': 21, '8': 22, '9': 23, ':': 24, ';': 25, '<E>': 26, '<P>': 27, '<S>': 28, '?': 29, 'A': 30, 'B': 31, 'C': 32, 'D': 33, 'E': 34, 'F': 35, 'G': 36, 'H': 37, 'I': 38, 'J': 39, 'K': 40, 'L': 41, 'M': 42, 'N': 43, 'O': 44, 'P': 45, 'Q': 46, 'R': 47, 'S': 48, 'T': 49, 'U': 50, 'V': 51, 'W': 52, 'X': 53, 'Y': 54, 'Z': 55, 'a': 56, 'b': 57, 'c': 58, 'd': 59, 'e': 60, 'f': 61, 'g': 62, 'h': 63, 'i': 64, 'j': 65, 'k': 66, 'l': 67, 'm': 68, 'n': 69, 'o': 70, 'p': 71, 'q': 72, 'r': 73, 's': 74, 't': 75, 'u': 76, 'v': 77, 'w': 78, 'x': 79, 'y': 80, 'z': 81, '|': 82}
 ignore_files = {'a05/a05-116/a05-116-09.png'}
 
 def load_image(path, max_len=2227, transform=False):
-    array = preprocess(path, (max_len, 64), random_pad=transform)
+    array = cv2.imread(path, 0)
     if transform:
-        array = augmentation(array, rotation_range=1.2, scale_range=0.5, height_shift_range=0, width_shift_range=0, dilate_range=2, erode_range=2)
+        array = cv2.resize(augmentor(array), (array.shape[1], array.shape[0]), interpolation=cv2.INTER_AREA)
 
+    array = cv2.resize(array, (int(array.shape[1]*(64/array.shape[0])), 64), interpolation=cv2.INTER_AREA)
+    if array.shape[1] >= max_len:
+        array = cv2.resize(array, (max_len, 64), interpolation=cv2.INTER_AREA)    
+    else:
+        right = max_len - array.shape[1]
+        array =  cv2.copyMakeBorder(array, 0, 0, 0, right, cv2.BORDER_CONSTANT)
+    
+
+    assert array.shape == (64, max_len)
     array = array.astype(np.float32)/255.0
     return torch.from_numpy(array).unsqueeze(0)
 
@@ -114,3 +124,4 @@ if __name__ == "__main__":
     print(len(iam.subset(os.path.join(PP, 'splits', 'train.uttlist'))))
     print(len(iam.subset(os.path.join(PP, 'splits', 'validation.uttlist'))))
     print(len(iam.subset(os.path.join(PP, 'splits', 'test.uttlist'))))
+    iam[0]
