@@ -21,15 +21,14 @@ ignore_files = {'a05/a05-116/a05-116-09.png'}
 def load_image(path, max_len=2227, transform=False):
     array = cv2.imread(path, 0)
     if transform:
-        array = cv2.resize(augmentor(array), (array.shape[1], array.shape[0]), interpolation=cv2.INTER_AREA)
+        array = 255-cv2.resize(augmentor(array), (array.shape[1], array.shape[0]), interpolation=cv2.INTER_AREA)
 
     array = cv2.resize(array, (int(array.shape[1]*(64/array.shape[0])), 64), interpolation=cv2.INTER_AREA)
     if array.shape[1] >= max_len:
-        array = cv2.resize(array, (max_len, 64), interpolation=cv2.INTER_AREA)    
+        array = cv2.resize(array, (max_len, 64), interpolation=cv2.INTER_AREA)
     else:
         right = max_len - array.shape[1]
         array =  cv2.copyMakeBorder(array, 0, 0, 0, right, cv2.BORDER_CONSTANT)
-    
 
     assert array.shape == (64, max_len)
     array = array.astype(np.float32)/255.0

@@ -137,6 +137,7 @@ class Engine(object):
             else:
                 iterator = train_loader
     
+            #get_img = []
             for img, txt in iterator:
                 self.optim.zero_grad()
                 bt = txt.squeeze(1).permute(1, 0).to(self.device)
@@ -149,6 +150,9 @@ class Engine(object):
                 dim1 += bs
                 hypo += self.model.to_text(torch.argmax(b, dim=2))
                 ref += self.model.to_text(trgt)
+                #if not len(get_img):
+                #    for idx_im in range(min(img.size()[0], 4)):
+                #        get_img.append(wandb.Image(FTV.to_pil_image(img[idx_im]), caption=f'image train {idx_im}'))
 
             twer, tcer = self.metrics(hypo, ref)
             mean_loss_train = total_loss/dim1
@@ -159,6 +163,7 @@ class Engine(object):
                 self.log({'WER-train': twer, 'CER-train': tcer, 'LOSS-train': mean_loss_train}, i, verbose)
                 continue
 
+            #get_img_val = []
             hypo, hypo_greedy, ref = [], [], []
             with torch.no_grad():
     
@@ -178,16 +183,22 @@ class Engine(object):
                     loss, bs = self.loss(criterion, b, trgt)
                     total_loss += loss.detach().item()
                     dim1 += bs
+                    #if not len(get_img_val):
+                    #    for idx_im in range(min(img.size()[0], 4)):
+                    #        get_img_val.append(wandb.Image(FTV.to_pil_image(img[i]), caption=f'image val {idx_im}'))
+            #imgs = get_img + get_img_val
+            imgs = []
+    
 
             mean_loss_val = total_loss/dim1
             vwer, vcer = self.metrics(hypo, ref)
             vwer_greedy, vcer_greedy = self.metrics(hypo_greedy, ref)
             if lr_decay == 'plateau':
                 scheduler.step(vcer)
-    
+ 
             metrics = {'WER-train': twer, 'CER-train': tcer, 'WER-val': vwer, 'CER-val': vcer, 'WER-val-greedy': vwer_greedy,
                        'CER-val-greedy': vcer_greedy, 'LOSS-train': mean_loss_train, 'LOSS-val': mean_loss_val}
-            self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose)
+            self.checkpoint(metrics, checkpoint_dir, i, save_optimizer, no_save, verbose, imgs)
 
     def test(self, dataset, num_workers):
         self.dataset_init(dataset)
@@ -200,7 +211,7 @@ class Engine(object):
         wer, cer = self.metrics(hypo, ref)
         print(f"Test: wer = {wer}, cer = {cer}")
 
-    def log(self, metrics, step, verbose):
+    def log(self, metrics, step, verbose, imgs_lots):
         if verbose:
             print(f"Epoch {step}:\n", metrics)
         with torch.no_grad():
@@ -220,7 +231,8 @@ class Engine(object):
             plt.show()
 
         if self.wandb:
-            images = {'images': [wandb.Image(x, caption=t) for x, t in imgs]}
+            images = {'images': [wandb.Image(x, caption=t) for x, t in imgs] + imgs_lots}
+            print(images)
             wandb.log(metrics, step=step)
             wandb.log(images, step=step)
 
@@ -244,8 +256,8 @@ class Engine(object):
             d['optimizer'] = self.optim.state_dict()
         torch.save(d, save_pkl)
 
-    def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save, verbose):
-        self.log(metrics, step, verbose)
+    def checkpoint(self, metrics, checkpoint_dir, step, save_optimizer, no_save, verbose, imgs):
+        self.log(metrics, step, verbose, imgs)
         if self.metrics_.get('CER-val-greedy', 10000) > metrics['CER-val-greedy']:
             self.metrics_ = metrics
             if not no_save:

@@ -67,7 +67,7 @@ class TransformerHTR(nn.Module):
         if use_encoder:
             print("use_encoder, True")
             encoder_layers = nn.TransformerEncoderLayer(f, num_heads, f, dropout)
-            self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers)
+            self.transformer_encoder = nn.TransformerEncoder(encoder_layers, num_layers=num_layers)
         else:
             print("use_encoder, False")
             self.transformer_encoder = nn.Identity()
